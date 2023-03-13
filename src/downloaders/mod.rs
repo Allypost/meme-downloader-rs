@@ -100,7 +100,7 @@ fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
         .unwrap()
         .as_nanos();
     let file_identifier = now_ns.to_string();
-    let file_name = format!("{file_identifier}.%(title)s.%(ext)s");
+    let file_name = format!("{file_identifier}.%(id)s.%(ext)s");
 
     meme_dir.into().join(file_name)
 }

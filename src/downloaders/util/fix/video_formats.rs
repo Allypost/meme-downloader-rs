@@ -51,7 +51,7 @@ fn convert_a_to_b(
     let cmd = cmd
         .arg("-y")
         .arg("-hide_banner")
-        .args(["-loglevel", "verbose"])
+        .args(["-loglevel", "panic"])
         .args(["-i", (from_file_path.to_str().unwrap())])
         .args(["-max_muxing_queue_size", "1024"])
         .args(["-vf", "scale=ceil(iw/2)*2:ceil(ih/2)*2"])
@@ -139,6 +139,7 @@ fn reencode_video_file(file_path: &PathBuf) -> Result<PathBuf, String> {
     let mut cmd = process::Command::new(ffmpeg_path);
     let cmd = cmd
         .args(["-i", file_path.to_str().unwrap()])
+        .args(["-loglevel", "panic"])
         .args(["-preset", "slow"])
         .arg(&temp_file);
     info!("`ffmpeg' reencode command: {cmd:?}");

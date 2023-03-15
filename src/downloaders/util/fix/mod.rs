@@ -1,8 +1,8 @@
 use std::fmt::Display;
 use std::{fmt::Debug, path::PathBuf};
 
-pub mod file_extensions;
-pub mod video_formats;
+mod file_extensions;
+mod video_formats;
 
 #[allow(clippy::module_name_repetitions)]
 pub fn fix_files(paths: &mut [PathBuf]) -> Result<Vec<PathBuf>, String> {

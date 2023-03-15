@@ -1,6 +1,4 @@
-use std::{
-    fmt::{Debug, Display},
-};
+use std::fmt::{Debug, Display};
 
 #[allow(clippy::module_name_repetitions)]
 #[allow(clippy::clone_double_ref)]

@@ -1,6 +1,7 @@
 use crate::config::CONFIG;
 use log::{debug, error, info, trace};
 use std::{env, fs, path::PathBuf, process::exit, result::Result, time};
+use base64::Engine;
 
 mod instagram;
 mod twitter;
@@ -99,7 +100,7 @@ fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
         .duration_since(time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let file_identifier = now_ns.to_string();
+    let file_identifier = base64::engine::general_purpose::STANDARD_NO_PAD.encode(now_ns.to_string());
     let file_name = format!("{file_identifier}.%(id)s.%(ext)s");
 
     meme_dir.into().join(file_name)

@@ -1072,6 +1072,7 @@ name = "meme-download"
 version = "0.1.0"
 dependencies = [
  "atty",
+ "base64",
  "clap",
  "dirs",
  "infer",

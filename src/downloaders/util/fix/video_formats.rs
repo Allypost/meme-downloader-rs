@@ -57,6 +57,7 @@ fn convert_a_to_b(
         .args(["-vf", "scale=ceil(iw/2)*2:ceil(ih/2)*2"])
         .args(["-ab", "320k"])
         .args(["-map_metadata", "-1"])
+        .args(["-preset", "slow"])
         .arg(&to_file_path);
 
     let cmd_output = cmd.output();

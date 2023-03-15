@@ -1,28 +1,26 @@
 use super::DownloaderReturn;
 use crate::{
-    args, config,
-    downloaders::{get_output_template, USER_AGENT},
+    config,
+    downloaders::{USER_AGENT},
 };
-use log::{debug, error, info};
-use std::{path::PathBuf, process::exit};
+use log::{debug, info};
+use std::{path::PathBuf, process::{self}, time};
+use base64::Engine;
 
 pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
-    let args = args::ARGS.clone();
     let config = config::CONFIG.clone();
 
-    let yt_dlp = args
-        .yt_dlp_path
-        .or(config.yt_dlp_path)
-        .unwrap_or_else(get_yt_dlp_path);
+    let yt_dlp = config.yt_dlp_path()?;
     debug!("`yt-dlp' binary: {:#?}", &yt_dlp);
     let output_template = get_output_template(meme_dir);
     debug!("template: {:#?}", &output_template);
-    let mut cmd = std::process::Command::new(yt_dlp);
+    let mut cmd = process::Command::new(yt_dlp);
     let cmd = cmd
         .arg("--no-check-certificate")
         .args(["--socket-timeout", "120"])
         .arg("--no-part")
         .arg("--no-mtime")
+        .arg("--no-embed-info-json")
         .args(["--output", output_template.to_str().unwrap()])
         .args(["--user-agent", USER_AGENT])
         .args(["--no-simulate", "--print", "after_move:filepath"])
@@ -33,11 +31,11 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     debug!("Cmd output: {:?}", &cmd_output);
     let mut err = String::new();
     let new_file_path = match cmd_output {
-        Ok(std::process::Output {
-            stdout,
-            stderr: _,
-            status,
-        }) if status.success() => {
+        Ok(process::Output {
+               stdout,
+               stderr: _,
+               status,
+           }) if status.success() => {
             let output = String::from_utf8(stdout).unwrap();
             let output_path = PathBuf::from(output.trim());
 
@@ -62,12 +60,13 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     Ok(vec![new_file_path])
 }
 
-fn get_yt_dlp_path() -> PathBuf {
-    let yt_dlp = which::which("yt-dlp");
-    if yt_dlp.is_err() {
-        error!("`yt-dlp' is not installed. Please install it first.\nInstructions to install it are available at <https://github.com/yt-dlp/yt-dlp#installation>");
-        exit(1);
-    }
+fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
+    let now_ns = time::SystemTime::now()
+        .duration_since(time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let file_identifier = base64::engine::general_purpose::STANDARD_NO_PAD.encode(now_ns.to_string());
+    let file_name = format!("{file_identifier}.%(id)s.%(ext)s");
 
-    yt_dlp.unwrap()
+    meme_dir.into().join(file_name)
 }

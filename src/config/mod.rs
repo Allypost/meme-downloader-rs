@@ -4,12 +4,16 @@ use once_cell::sync::Lazy;
 use resolve_path::PathResolveExt;
 use std::io::{self, prelude::*};
 use std::path::PathBuf;
-use std::{fs, path};
+use std::fs;
+use which::which;
+use crate::args::ARGS;
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct Config {
-    pub yt_dlp_path: Option<path::PathBuf>,
-    pub memes_directory: Option<path::PathBuf>,
+    yt_dlp_path: Option<PathBuf>,
+    ffmpeg_path: Option<PathBuf>,
+    mediainfo_path: Option<PathBuf>,
+    memes_directory: Option<PathBuf>,
 }
 
 impl Config {
@@ -32,6 +36,33 @@ impl Config {
         config
     }
 
+    pub fn yt_dlp_path(self) -> Result<PathBuf, String> {
+        let args = ARGS.clone();
+
+        args
+            .yt_dlp_path
+            .or(self.yt_dlp_path)
+            .ok_or_else(|| "yt-dlp path not found in config.toml".to_string())
+            .or_else(|_e| which("yt-dlp"))
+            .map_err(|e| {
+                format!(
+                    "yt-dlp not found in PATH or config. Please install it or specify the path in config.toml. Error: {e}"
+                )
+            })
+    }
+
+    pub fn ffmpeg_path(self) -> Result<PathBuf, String> {
+        self
+            .ffmpeg_path
+            .ok_or_else(|| "ffmpeg path not found in config.toml".to_string())
+            .or_else(|_e| which("ffmpeg"))
+            .map_err(|e| {
+                format!(
+                    "ffmpeg not found in PATH or config. Please install it or specify the path in config.toml. Error: {e}"
+                )
+            })
+    }
+
     pub fn memes_dir(self) -> Result<PathBuf, io::Error> {
         let args = args::ARGS.clone();
 
@@ -47,6 +78,18 @@ impl Config {
             Ok(path) => Ok(path.into()),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn mediainfo_path(self) -> Result<PathBuf, String> {
+        self
+            .mediainfo_path
+            .ok_or_else(|| "mediainfo path not found in config.toml".to_string())
+            .or_else(|_e| which("mediainfo"))
+            .map_err(|e| {
+                format!(
+                    "mediainfo not found in PATH or config. Please install it or specify the path in config.toml. Error: {e}"
+                )
+            })
     }
 }
 

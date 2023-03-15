@@ -1,11 +1,12 @@
 use super::DownloaderReturn;
-use crate::{
-    config,
-    downloaders::{USER_AGENT},
-};
-use log::{debug, info};
-use std::{path::PathBuf, process::{self}, time};
+use crate::{config, downloaders::USER_AGENT};
 use base64::Engine;
+use log::{debug, info};
+use std::{
+    path::PathBuf,
+    process::{self},
+    time,
+};
 
 pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let config = config::CONFIG.clone();
@@ -32,10 +33,10 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let mut err = String::new();
     let new_file_path = match cmd_output {
         Ok(process::Output {
-               stdout,
-               stderr: _,
-               status,
-           }) if status.success() => {
+            stdout,
+            stderr: _,
+            status,
+        }) if status.success() => {
             let output = String::from_utf8(stdout).unwrap();
             let output_path = PathBuf::from(output.trim());
 
@@ -65,7 +66,8 @@ fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
         .duration_since(time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let file_identifier = base64::engine::general_purpose::STANDARD_NO_PAD.encode(now_ns.to_string());
+    let file_identifier =
+        base64::engine::general_purpose::STANDARD_NO_PAD.encode(now_ns.to_string());
     let file_name = format!("{file_identifier}.%(id)s.%(ext)s");
 
     meme_dir.into().join(file_name)

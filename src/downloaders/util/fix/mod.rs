@@ -1,5 +1,5 @@
-use std::{fmt::Debug, path::PathBuf};
 use std::fmt::Display;
+use std::{fmt::Debug, path::PathBuf};
 
 pub mod file_extensions;
 pub mod video_formats;
@@ -13,14 +13,13 @@ pub fn fix_files(paths: &mut [PathBuf]) -> Result<Vec<PathBuf>, String> {
 }
 
 #[allow(clippy::clone_double_ref)]
-fn check_results<TVal: Debug, TErr: Display>(result: Vec<Result<TVal, TErr>>) -> Result<Vec<TVal>, String> {
+fn check_results<TVal: Debug, TErr: Display>(
+    result: Vec<Result<TVal, TErr>>,
+) -> Result<Vec<TVal>, String> {
     if result.iter().any(Result::is_err) {
-        let mapped = result
-            .iter()
-            .filter(|x| x.is_err())
-            .map(|x| {
-                return x.as_ref().unwrap_err().clone();
-            });
+        let mapped = result.iter().filter(|x| x.is_err()).map(|x| {
+            return x.as_ref().unwrap_err().clone();
+        });
 
         let mut ret = vec![];
         for r in mapped {

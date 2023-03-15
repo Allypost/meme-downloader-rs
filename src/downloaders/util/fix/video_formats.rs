@@ -1,8 +1,8 @@
+use crate::config::CONFIG;
+use filetime::FileTime;
 use log::{debug, info, trace};
 use std::{env, fs, io, path::PathBuf, process, time};
-use filetime::FileTime;
 use which::which;
-use crate::config::CONFIG;
 
 pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBuf, String>> {
     if let Err(e) = which("mediainfo") {
@@ -91,8 +91,7 @@ fn convert_a_to_b(
 fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
     let mediainfo_path = CONFIG.clone().mediainfo_path()?;
     let mut cmd = process::Command::new(mediainfo_path);
-    let cmd = cmd.args(["--Inform", "Video;%Format%"])
-        .arg(file_path);
+    let cmd = cmd.args(["--Inform", "Video;%Format%"]).arg(file_path);
     info!("`mediainfo' command: {cmd:?}");
     let cmd_output = cmd.output();
 
@@ -102,9 +101,7 @@ fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
 
             Ok(stdout.trim().to_ascii_lowercase())
         }
-        _ => {
-            Err(format!("Failed to get video format of {file_path:?}"))
-        }
+        _ => Err(format!("Failed to get video format of {file_path:?}")),
     }?;
     trace!("`mediainfo' output: {media_info:?}");
 
@@ -127,46 +124,51 @@ fn reencode_video_file(file_path: &PathBuf) -> Result<PathBuf, String> {
         .unwrap()
         .as_nanos();
     let temp_dir = env::temp_dir().join(format!("tmp.{now_ns}"));
-    fs::create_dir_all(&temp_dir).map_err(|e| format!("Failed to create temp dir {temp_dir:?}: {e:?}"))?;
+    fs::create_dir_all(&temp_dir)
+        .map_err(|e| format!("Failed to create temp dir {temp_dir:?}: {e:?}"))?;
     let temp_file = temp_dir.join(file_path.file_name().unwrap());
 
-    let old_meta = file_path.metadata().map_err(|e| format!("Failed to get metadata of {file_path:?}: {e:?}"))?;
+    let old_meta = file_path
+        .metadata()
+        .map_err(|e| format!("Failed to get metadata of {file_path:?}: {e:?}"))?;
     let old_mtime = FileTime::from_last_modification_time(&old_meta);
     let old_atime = FileTime::from_last_access_time(&old_meta);
 
     let ffmpeg_path = CONFIG.clone().ffmpeg_path()?;
     let mut cmd = process::Command::new(ffmpeg_path);
-    let cmd = cmd.args(["-i", file_path.to_str().unwrap()])
+    let cmd = cmd
+        .args(["-i", file_path.to_str().unwrap()])
         .args(["-preset", "slow"])
         .arg(&temp_file);
     info!("`ffmpeg' reencode command: {cmd:?}");
 
     let temp_file = match cmd.status() {
-        Ok(status) if status.success() => {
-            Ok(temp_file)
-        }
-        _ => {
-            Err(format!("Failed to reencode {file_path:?}"))
-        }
+        Ok(status) if status.success() => Ok(temp_file),
+        _ => Err(format!("Failed to reencode {file_path:?}")),
     }?;
 
     let move_options = fs_extra::file::CopyOptions::new().overwrite(true);
 
-    fs_extra::file::move_file(&temp_file, file_path, &move_options).map_err(|e| format!("Failed to move {temp_file:?} to {file_path:?}: {e:?}"))?;
+    fs_extra::file::move_file(&temp_file, file_path, &move_options)
+        .map_err(|e| format!("Failed to move {temp_file:?} to {file_path:?}: {e:?}"))?;
 
-    filetime::set_file_times(file_path, old_atime, old_mtime).map_err(|e| format!("Failed to set file times of {file_path:?}: {e:?}"))?;
+    filetime::set_file_times(file_path, old_atime, old_mtime)
+        .map_err(|e| format!("Failed to set file times of {file_path:?}: {e:?}"))?;
 
     Ok(file_path.into())
 }
 
 #[allow(clippy::similar_names)]
 fn copy_file_times<'s>(old: &PathBuf, new: &'s PathBuf) -> Result<&'s PathBuf, String> {
-    let old_meta = old.metadata().map_err(|e| format!("Failed to get metadata of {old:?}: {e:?}"))?;
+    let old_meta = old
+        .metadata()
+        .map_err(|e| format!("Failed to get metadata of {old:?}: {e:?}"))?;
 
     let old_mtime = FileTime::from_last_modification_time(&old_meta);
     let old_atime = FileTime::from_last_access_time(&old_meta);
 
-    filetime::set_file_times(new, old_atime, old_mtime).map_err(|e| format!("Failed to set file times of {new:?}: {e:?}"))?;
+    filetime::set_file_times(new, old_atime, old_mtime)
+        .map_err(|e| format!("Failed to set file times of {new:?}: {e:?}"))?;
 
     Ok(new)
 }

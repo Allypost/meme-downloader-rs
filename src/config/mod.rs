@@ -1,12 +1,12 @@
 use crate::args;
+use crate::args::ARGS;
 use log::debug;
 use once_cell::sync::Lazy;
 use resolve_path::PathResolveExt;
+use std::fs;
 use std::io::{self, prelude::*};
 use std::path::PathBuf;
-use std::fs;
 use which::which;
-use crate::args::ARGS;
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct Config {

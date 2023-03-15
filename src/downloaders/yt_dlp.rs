@@ -20,7 +20,7 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
         .args(["--socket-timeout", "120"])
         .arg("--no-part")
         .arg("--no-mtime")
-        .arg("--no-embed-info-json")
+        .arg("--no-embed-metadata")
         .args(["--output", output_template.to_str().unwrap()])
         .args(["--user-agent", USER_AGENT])
         .args(["--no-simulate", "--print", "after_move:filepath"])

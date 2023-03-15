@@ -1,7 +1,7 @@
-use crate::config::CONFIG;
+use crate::{config::CONFIG, downloaders::util::trash::move_to_trash};
 use filetime::FileTime;
 use log::{debug, info, trace};
-use std::{env, fs, io, path::PathBuf, process, time};
+use std::{env, fs, path::PathBuf, process, time};
 
 pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBuf, String>> {
     let mediainfo = CONFIG.clone().mediainfo_path();
@@ -171,19 +171,4 @@ fn copy_file_times<'s>(old: &PathBuf, new: &'s PathBuf) -> Result<&'s PathBuf, S
         .map_err(|e| format!("Failed to set file times of {new:?}: {e:?}"))?;
 
     Ok(new)
-}
-
-fn move_to_trash(f: &PathBuf) -> Result<(), io::Error> {
-    debug!("Sending {f:?} into trash");
-
-    trash::delete(f)
-        .or_else(|e| {
-            debug!("Failed to put {f:?} into trash: {e:?}");
-            debug!("Deleting old file {f:?}");
-            fs::remove_file(f)
-        })
-        .map_err(|e| {
-            debug!("Failed to delete old file {f:?}: {e:?}");
-            e
-        })
 }

@@ -26,6 +26,9 @@ impl Config {
             config = toml::from_str(&config_file).unwrap();
         } else {
             debug!("Config file not found. Creating one at {:#?}", config_file);
+            if let Ok(memes_dir) = config.clone().memes_dir() {
+                config.memes_directory = Some(memes_dir);
+            }
             let config_dir = config_file.parent().unwrap();
             fs::create_dir_all(config_dir).unwrap();
             let mut config_file = fs::File::create(config_file).unwrap();

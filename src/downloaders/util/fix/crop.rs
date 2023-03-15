@@ -145,7 +145,7 @@ fn auto_crop_video(file: &PathBuf) -> Result<PathBuf, String> {
         }
     }
 
-    debug!("Final crop filter: {final_crop_filter:#?}");
+    debug!("Final crop filter: {final_crop_filter:?}");
 
     let new_filename = {
         let file_name = file.file_stem().unwrap().to_str().unwrap();
@@ -162,11 +162,11 @@ fn auto_crop_video(file: &PathBuf) -> Result<PathBuf, String> {
         .args(["-vf", &final_crop_filter.to_string()])
         .args(["-preset", "slow"])
         .arg(&new_filename);
-    info!("Running command {cmd:#?}");
+    info!("Running command {cmd:?}");
 
     let cmd_output = cmd
         .output()
-        .map_err(|e| format!("Failed to run command {cmd:#?}: {e:?}"))?;
+        .map_err(|e| format!("Failed to run command {cmd:?}: {e:?}"))?;
 
     if !cmd_output.status.success() {
         let stderr = String::from_utf8(cmd_output.stderr)

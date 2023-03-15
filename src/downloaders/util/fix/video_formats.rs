@@ -2,11 +2,11 @@ use crate::config::CONFIG;
 use filetime::FileTime;
 use log::{debug, info, trace};
 use std::{env, fs, io, path::PathBuf, process, time};
-use which::which;
 
 pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBuf, String>> {
-    if let Err(e) = which("mediainfo") {
-        return vec![Err(format!("Failed to find `ffprobe' binary: {e:?}"))];
+    let mediainfo = CONFIG.clone().mediainfo_path();
+    if let Err(e) = mediainfo {
+        return vec![Err(format!("`mediainfo' binary not found: {e:?}"))];
     }
 
     new_file_paths

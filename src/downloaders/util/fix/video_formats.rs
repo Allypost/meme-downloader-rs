@@ -1,6 +1,7 @@
 use crate::{config::CONFIG, downloaders::util::trash::move_to_trash};
 use filetime::FileTime;
 use log::{debug, info, trace};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{env, fs, path::PathBuf, process, time};
 
 pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBuf, String>> {
@@ -10,7 +11,7 @@ pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBu
     }
 
     new_file_paths
-        .iter()
+        .par_iter()
         .map(|p| {
             Ok(p)
                 .and_then(|p| convert_a_to_b(p, "webm", "mp4"))

@@ -20,6 +20,10 @@ pub fn download_file(url: &str) -> Result<Vec<PathBuf>, String> {
     });
 
     trace!("Meme dir: {:?}", &meme_dir);
+    if !meme_dir.exists() {
+        info!("Memes directory does not exist. Creating...");
+        fs::create_dir_all(&meme_dir).unwrap();
+    }
     env::set_current_dir(&meme_dir).unwrap();
 
     let mut new_file_paths = match url {

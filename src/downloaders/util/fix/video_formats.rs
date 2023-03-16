@@ -1,13 +1,16 @@
-use crate::{config::CONFIG, helpers::trash::move_to_trash};
+use crate::{
+    config::CONFIG,
+    helpers::{ffprobe, results::option_contains, trash::move_to_trash},
+};
 use filetime::FileTime;
 use log::{debug, info, trace};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{env, fs, path::PathBuf, process, time};
 
 pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBuf, String>> {
-    let mediainfo = CONFIG.clone().mediainfo_path();
-    if let Err(e) = mediainfo {
-        return vec![Err(format!("`mediainfo' binary not found: {e:?}"))];
+    let ffprobe_path = CONFIG.clone().ffprobe_path();
+    if let Err(e) = ffprobe_path {
+        return vec![Err(format!("`ffprobe' binary not found: {e:?}"))];
     }
 
     new_file_paths
@@ -90,33 +93,29 @@ fn convert_a_to_b(
     }
 }
 
+const UNWANTED_CODECS: [&str; 2] = ["av1", "hevc"];
+
 fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
-    let mediainfo_path = CONFIG.clone().mediainfo_path()?;
-    let mut cmd = process::Command::new(mediainfo_path);
-    let cmd = cmd.args(["--Inform", "Video;%Format%"]).arg(file_path);
-    info!("`mediainfo' command: {cmd:?}");
-    let cmd_output = cmd.output();
+    let media_info = ffprobe::ffprobe(file_path)
+        .map_err(|e| format!("Failed to get media info of {file_path:?}: {e:?}",))?;
+    trace!("`ffprobe' output: {media_info:?}");
 
-    let media_info = match cmd_output {
-        Ok(process::Output { status, stdout, .. }) if status.success() => {
-            let stdout = String::from_utf8(stdout).unwrap();
+    let has_unwanted_codec = media_info
+        .streams
+        .iter()
+        .filter(|s| option_contains(&s.codec_type, &"video".to_string()))
+        .find(|s| {
+            UNWANTED_CODECS
+                .iter()
+                .any(|c| option_contains(&s.codec_name, &(*c).to_string()))
+        });
 
-            Ok(stdout.trim().to_ascii_lowercase())
-        }
-        _ => Err(format!("Failed to get video format of {file_path:?}")),
-    }?;
-    trace!("`mediainfo' output: {media_info:?}");
+    debug!("Has unwanted codecs: {has_unwanted_codec:?})");
 
-    let has_av1 = media_info.contains("av1") || media_info.contains("av01");
-    let has_hevc = media_info.contains("hevc") || media_info.contains("h265");
-
-    debug!("`mediainfo' output: (has_av1: {has_av1}, has_hevc: {has_hevc})");
-
-    if !has_av1 && !has_hevc {
-        return Ok(file_path.into());
+    match has_unwanted_codec {
+        Some(_) => reencode_video_file(file_path),
+        None => Ok(file_path.into()),
     }
-
-    reencode_video_file(file_path)
 }
 
 #[allow(clippy::similar_names)]

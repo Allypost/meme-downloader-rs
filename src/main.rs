@@ -13,6 +13,7 @@ use std::{
 mod args;
 mod config;
 mod downloaders;
+mod fixers;
 mod helpers;
 mod notif;
 

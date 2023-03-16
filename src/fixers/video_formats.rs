@@ -4,26 +4,15 @@ use crate::{
 };
 use filetime::FileTime;
 use log::{debug, info, trace};
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{env, fs, path::PathBuf, process, time};
 
-pub fn convert_files_into_known(new_file_paths: &[PathBuf]) -> Vec<Result<PathBuf, String>> {
-    let ffprobe_path = CONFIG.clone().ffprobe_path();
-    if let Err(e) = ffprobe_path {
-        return vec![Err(format!("`ffprobe' binary not found: {e:?}"))];
-    }
-
-    new_file_paths
-        .par_iter()
-        .map(|p| {
-            Ok(p)
-                .and_then(|p| convert_a_to_b(p, "webm", "mp4"))
-                .and_then(|p| convert_a_to_b(&p, "mkv", "mp4"))
-                .and_then(|p| convert_a_to_b(&p, "mov", "mp4"))
-                .and_then(|p| convert_a_to_b(&p, "webp", "png"))
-                .and_then(|p| reencode_dodgy_encodings(&p))
-        })
-        .collect()
+pub fn convert_file_into_known(file_path: &PathBuf) -> Result<PathBuf, String> {
+    Ok(file_path)
+        .and_then(|p| convert_a_to_b(p, "webm", "mp4"))
+        .and_then(|p| convert_a_to_b(&p, "mkv", "mp4"))
+        .and_then(|p| convert_a_to_b(&p, "mov", "mp4"))
+        .and_then(|p| convert_a_to_b(&p, "webp", "png"))
+        .and_then(|p| reencode_dodgy_encodings(&p))
 }
 
 fn convert_a_to_b(

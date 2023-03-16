@@ -1,9 +1,9 @@
+use crate::fixers;
 use log::{debug, info};
 use std::{env, path::PathBuf, result::Result};
 
 mod instagram;
 mod twitter;
-mod util;
 mod yt_dlp;
 
 static USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36";
@@ -32,7 +32,7 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
 
     debug!("Downloaded files: {:?}", &new_file_paths);
 
-    let new_file_paths = util::fix::fix_files(&mut new_file_paths)?;
+    let new_file_paths = fixers::fix_files(&new_file_paths)?;
 
     Ok(new_file_paths)
 }

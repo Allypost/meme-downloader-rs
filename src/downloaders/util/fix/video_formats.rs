@@ -48,6 +48,8 @@ fn convert_a_to_b(
     let from_file_path = file_path.with_extension(from_format);
     let to_file_path = file_path.with_extension(to_format);
 
+    info!("Converting file {from_file_path:?} to {to_format}");
+
     let ffmpeg_path = CONFIG.clone().ffmpeg_path()?;
     debug!("`ffmpeg' binary: {ffmpeg_path:?}");
     let mut cmd = process::Command::new(ffmpeg_path);
@@ -62,6 +64,7 @@ fn convert_a_to_b(
         .args(["-map_metadata", "-1"])
         .args(["-preset", "slow"])
         .arg(&to_file_path);
+    info!("Running `ffmpeg' command: {cmd:?}");
 
     let cmd_output = cmd.output();
     match cmd_output {

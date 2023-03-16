@@ -1,4 +1,4 @@
-use crate::{config::CONFIG, downloaders::util::trash::move_to_trash};
+use crate::{config::CONFIG, helpers::trash::move_to_trash};
 use filetime::FileTime;
 use log::{debug, info, trace};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};

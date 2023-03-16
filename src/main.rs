@@ -12,6 +12,7 @@ use std::{
 mod args;
 mod config;
 mod downloaders;
+mod helpers;
 mod notif;
 
 extern crate sanitize_filename;

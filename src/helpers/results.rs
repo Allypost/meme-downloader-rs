@@ -25,3 +25,10 @@ pub fn check_results<TVal: Debug, TErr: Display>(
 
     Ok(ret)
 }
+
+pub fn option_contains<T: Eq>(option: &Option<T>, contains: &T) -> bool {
+    match option {
+        Some(value) => contains == value,
+        None => false,
+    }
+}

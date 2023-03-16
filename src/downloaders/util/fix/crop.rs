@@ -1,4 +1,7 @@
-use crate::{config::CONFIG, downloaders::util::trash::move_to_trash};
+use crate::{
+    config::CONFIG,
+    helpers::{ffprobe, results::option_contains, trash::move_to_trash},
+};
 use log::{debug, info};
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use std::{
@@ -146,6 +149,24 @@ fn auto_crop_video(file: &PathBuf) -> Result<PathBuf, String> {
     }
 
     debug!("Final crop filter: {final_crop_filter:?}");
+
+    let media_info = ffprobe::ffprobe(file).map_err(|e| format!("{e:?}"))?;
+    let video_stream = media_info
+        .streams
+        .iter()
+        .find(|s| option_contains(&s.codec_type, &"video".to_string()))
+        .ok_or("No video stream found")?;
+
+    match (video_stream.width, video_stream.height) {
+        (Some(w), Some(h))
+            if i64::from(final_crop_filter.width) >= w
+                && i64::from(final_crop_filter.height) >= h =>
+        {
+            debug!("Video is already cropped, skipping");
+            return Ok(file.into());
+        }
+        _ => {}
+    }
 
     let new_filename = {
         let file_name = file.file_stem().unwrap().to_str().unwrap();

@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic)]
 
+use crate::config::CONFIG;
 use log::{debug, error, info, trace};
 use std::io::prelude::*;
 use std::{
@@ -36,7 +37,20 @@ fn main() {
     trace!("Config: {:?}", config::CONFIG);
     trace!("Args: {:?}", args::ARGS);
 
-    match downloaders::download_file(&download_url) {
+    let meme_dir = CONFIG.clone().memes_dir().unwrap_or_else(|e| {
+        error!("Error resolving memes directory: {:?}", e);
+        exit(1);
+    });
+    if !meme_dir.exists() {
+        info!("Memes directory does not exist. Creating...");
+        fs::create_dir_all(&meme_dir).unwrap_or_else(|e| {
+            error!("Error creating memes directory: {:?}", e);
+            exit(1);
+        });
+    }
+    trace!("Meme dir: {meme_dir:?}");
+
+    match downloaders::download_file(&download_url, &meme_dir) {
         Ok(paths) => {
             info!(
                 "Downloaded file(s): {}",

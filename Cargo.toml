@@ -28,3 +28,9 @@ toml = "0.7.2"
 trash = "3.0.1"
 url = "2.3.1"
 which = "4.4.0"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1

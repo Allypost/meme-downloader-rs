@@ -89,8 +89,9 @@ fn convert_a_to_b(
 const UNWANTED_CODECS: [&str; 2] = ["av1", "hevc"];
 
 fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
+    debug!("Checking if {file_path:?} has unwanted codecs");
     let media_info = ffprobe::ffprobe(file_path)
-        .map_err(|e| format!("Failed to get media info of {file_path:?}: {e:?}",))?;
+        .map_err(|e| format!("Failed to get media info of {file_path:?}: {e:?}"))?;
     trace!("`ffprobe' output: {media_info:?}");
 
     let has_unwanted_codec = media_info
@@ -103,7 +104,9 @@ fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
                 .any(|c| option_contains(&s.codec_name, &(*c).to_string()))
         });
 
-    debug!("Has unwanted codecs: {has_unwanted_codec:?})");
+    if let Some(codec) = has_unwanted_codec {
+        debug!("Has unwanted codec: {codec:?}");
+    }
 
     match has_unwanted_codec {
         Some(_) => reencode_video_file(file_path),

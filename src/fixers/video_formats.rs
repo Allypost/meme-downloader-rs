@@ -1,3 +1,4 @@
+use super::FixerReturn;
 use crate::{
     config::CONFIG,
     helpers::{ffprobe, results::option_contains, trash::move_to_trash},
@@ -6,7 +7,7 @@ use filetime::FileTime;
 use log::{debug, info, trace};
 use std::{env, fs, path::PathBuf, process, time};
 
-pub fn convert_file_into_known(file_path: &PathBuf) -> Result<PathBuf, String> {
+pub fn convert_file_into_known(file_path: &PathBuf) -> FixerReturn {
     Ok(file_path)
         .and_then(|p| convert_a_to_b(p, "webm", "mp4"))
         .and_then(|p| convert_a_to_b(&p, "mkv", "mp4"))

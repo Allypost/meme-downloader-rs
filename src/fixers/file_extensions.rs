@@ -1,7 +1,8 @@
+use super::FixerReturn;
 use log::{debug, trace};
 use std::{fs, path::PathBuf};
 
-pub fn fix_file_extension(file_path: &PathBuf) -> Result<PathBuf, String> {
+pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
     let extension = file_path.extension().and_then(|x| return x.to_str());
     match extension {
         Some(ext) if ext == "unknown_video" => {

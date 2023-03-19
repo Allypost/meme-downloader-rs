@@ -18,3 +18,5 @@ pub fn fix_files(paths: &Vec<PathBuf>) -> Result<Vec<PathBuf>, String> {
         })
         .collect()
 }
+
+type FixerReturn = Result<PathBuf, String>;

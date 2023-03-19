@@ -1,20 +1,21 @@
 use super::FixerReturn;
-use log::{debug, info, trace};
+use log::{debug, info};
 use std::{fs, path::PathBuf};
 
 pub fn fix_file_name(file_path: &PathBuf) -> FixerReturn {
+    info!("Checking file name for {file_path:?}...");
     let name = file_path.file_stem().and_then(|x| return x.to_str());
 
     let new_name = match name {
         Some(name) if !name.is_ascii() => {
-            trace!("File name {name:?} contains non-ascii characters. Trying to fix...");
+            debug!("File name {name:?} contains non-ascii characters. Trying to fix...");
             name.replace(|c: char| !c.is_ascii(), "")
         }
         None => {
             return Err(format!("Failed to get name for file {:?}", &file_path));
         }
         Some(name) => {
-            trace!("File name for {name:?} is OK. Skipping...");
+            info!("File name for {name:?} is OK. Skipping...");
             return Ok(file_path.clone());
         }
     };

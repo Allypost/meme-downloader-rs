@@ -12,6 +12,8 @@ use std::{
 };
 
 pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
+    info!("Auto cropping video {file_path:?}");
+
     let ffmpeg = CONFIG.clone().ffmpeg_path()?;
     let crop_filters = vec![BorderColor::White, BorderColor::Black]
         .into_par_iter()
@@ -48,15 +50,25 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     let video_stream = media_info
         .streams
         .iter()
-        .find(|s| option_contains(&s.codec_type, &"video".to_string()))
-        .ok_or("No video stream found")?;
+        .find(|s| option_contains(&s.codec_type, &"video".to_string()));
+
+    let video_stream = match video_stream {
+        Some(s) => {
+            debug!("Found video stream");
+            s
+        }
+        None => {
+            info!("File does not contain a video stream, skipping");
+            return Ok(file_path.into());
+        }
+    };
 
     match (video_stream.width, video_stream.height) {
         (Some(w), Some(h))
             if i64::from(final_crop_filter.width) >= w
                 && i64::from(final_crop_filter.height) >= h =>
         {
-            debug!("Video is already cropped, skipping");
+            info!("Video is already cropped, skipping");
             return Ok(file_path.into());
         }
         _ => {}

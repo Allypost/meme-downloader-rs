@@ -8,12 +8,18 @@ use log::{debug, info, trace};
 use std::{env, fs, path::PathBuf, process, time};
 
 pub fn convert_file_into_known(file_path: &PathBuf) -> FixerReturn {
+    debug!("Checking if {file_path:?} has unwanted codecs or formatting");
+
     Ok(file_path)
         .and_then(|p| convert_a_to_b(p, "webm", "mp4"))
         .and_then(|p| convert_a_to_b(&p, "mkv", "mp4"))
         .and_then(|p| convert_a_to_b(&p, "mov", "mp4"))
         .and_then(|p| convert_a_to_b(&p, "webp", "png"))
         .and_then(|p| reencode_dodgy_encodings(&p))
+        .and_then(|p| {
+            debug!("File {file_path:?} done being converted");
+            Ok(p)
+        })
 }
 
 fn convert_a_to_b(
@@ -89,7 +95,6 @@ fn convert_a_to_b(
 const UNWANTED_CODECS: [&str; 2] = ["av1", "hevc"];
 
 fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
-    debug!("Checking if {file_path:?} has unwanted codecs");
     let media_info = ffprobe::ffprobe(file_path)
         .map_err(|e| format!("Failed to get media info of {file_path:?}: {e:?}"))?;
     trace!("`ffprobe' output: {media_info:?}");
@@ -116,6 +121,8 @@ fn reencode_dodgy_encodings(file_path: &PathBuf) -> Result<PathBuf, String> {
 
 #[allow(clippy::similar_names)]
 fn reencode_video_file(file_path: &PathBuf) -> Result<PathBuf, String> {
+    info!("Reencoding file {file_path:?}");
+
     let now_ns = time::SystemTime::now()
         .duration_since(time::UNIX_EPOCH)
         .unwrap()

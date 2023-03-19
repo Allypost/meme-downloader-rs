@@ -1,18 +1,20 @@
 use super::FixerReturn;
-use log::{debug, trace};
+use log::{debug, info};
 use std::{fs, path::PathBuf};
 
 pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
+    info!("Checking file extension for {file_path:?}...");
+
     let extension = file_path.extension().and_then(|x| return x.to_str());
     match extension {
         Some(ext) if ext == "unknown_video" => {
-            trace!("File extension is `unknown_video'. Trying to infer file extension...");
+            debug!("File extension is `unknown_video'. Trying to infer file extension...");
         }
         None => {
             return Err(format!("Failed to get extension for file {:?}", &file_path));
         }
         Some(_) => {
-            trace!(
+            info!(
                 "File extension for {:?} is OK. Skipping...",
                 &file_path.file_name().unwrap()
             );
@@ -32,7 +34,7 @@ pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
 
     let new_file_path = file_path.with_extension(file_ext);
 
-    debug!("Renaming file from {file_path:?} to {new_file_path:?}");
+    info!("Renaming file from {file_path:?} to {new_file_path:?}");
     match fs::rename(file_path, &new_file_path) {
         Ok(_) => Ok(new_file_path),
         Err(e) => Err(format!("Failed to rename file: {e:?}")),

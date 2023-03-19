@@ -1,7 +1,6 @@
 use log::debug;
 use std::{fs, io, path::PathBuf};
 
-#[allow(clippy::module_name_repetitions)]
 pub fn move_to_trash(f: &PathBuf) -> Result<(), io::Error> {
     debug!("Sending {f:?} into trash");
 

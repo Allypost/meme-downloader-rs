@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
 
 use crate::config::CONFIG;
 use log::{debug, error, info, trace};

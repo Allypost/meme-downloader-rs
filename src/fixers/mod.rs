@@ -7,7 +7,6 @@ pub mod file_extensions;
 pub mod file_name;
 pub mod video_formats;
 
-#[allow(clippy::module_name_repetitions)]
 pub fn fix_files(paths: &Vec<PathBuf>) -> Result<Vec<PathBuf>, String> {
     paths
         .par_iter()

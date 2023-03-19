@@ -13,7 +13,6 @@ pub fn ffprobe(path: impl AsRef<Path>) -> Result<FfProbeResult, FfProbeError> {
     )
 }
 
-#[allow(clippy::module_name_repetitions)]
 pub fn ffprobe_config(
     config: Config,
     path: impl AsRef<Path>,

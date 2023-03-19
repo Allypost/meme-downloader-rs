@@ -16,9 +16,9 @@ pub fn convert_file_into_known(file_path: &PathBuf) -> FixerReturn {
         .and_then(|p| convert_a_to_b(&p, "mov", "mp4"))
         .and_then(|p| convert_a_to_b(&p, "webp", "png"))
         .and_then(|p| reencode_dodgy_encodings(&p))
-        .and_then(|p| {
+        .map(|p| {
             debug!("File {file_path:?} done being converted");
-            Ok(p)
+            p
         })
 }
 

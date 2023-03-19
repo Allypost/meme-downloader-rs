@@ -10,6 +10,11 @@ pub static URL_MATCH: Lazy<Regex> = Lazy::new(|| {
         .unwrap()
 });
 
+pub static MEDIA_URL_MATCH: Lazy<Regex> = Lazy::new(|| {
+    // https://pbs.twimg.com/media/FqPFEWYWYBQ5iG3?format=png&name=small
+    Regex::new(r"^https?://pbs\.twimg\.com/media/").unwrap()
+});
+
 pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     debug!("Trying to download tweet media from: {:?}", &url);
 
@@ -18,6 +23,25 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
 
         screenshot_tweet(meme_dir, url)
     })
+}
+
+pub fn download_media_url(meme_dir: &PathBuf, twitter_media_url: &str) -> DownloaderReturn {
+    let mut parsed = url::Url::parse(twitter_media_url)
+        .map_err(|x| format!("Failed to parse twitter media URL: {x:?}"))?;
+
+    let url_without_name = {
+        let params = parsed.query_pairs().filter(|(key, _)| key != "name");
+        let params = url::form_urlencoded::Serializer::new(String::new())
+            .clear()
+            .extend_pairs(params)
+            .finish();
+
+        parsed.set_query(Some(&params));
+
+        parsed.as_str()
+    };
+
+    yt_dlp::download(meme_dir, url_without_name)
 }
 
 fn screenshot_tweet(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {

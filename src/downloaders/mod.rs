@@ -24,6 +24,10 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
             info!("Found URL is twitter status. Trying to download post media...");
             twitter::download(download_dir, twitter_url)?
         }
+        twitter_media_url if twitter::MEDIA_URL_MATCH.is_match(url) => {
+            info!("Found URL is twitter media. Downloading...");
+            twitter::download_media_url(download_dir, twitter_media_url)?
+        }
         _ => {
             info!("Trying to download with yt-dlp...");
             yt_dlp::download(download_dir, url)?

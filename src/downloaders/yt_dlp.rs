@@ -1,12 +1,7 @@
 use super::DownloaderReturn;
-use crate::{config, downloaders::USER_AGENT};
-use base64::Engine;
+use crate::{config, downloaders::USER_AGENT, helpers::various::time_id};
 use log::{debug, info};
-use std::{
-    path::PathBuf,
-    process::{self},
-    time,
-};
+use std::{path::PathBuf, process};
 
 pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let config = config::CONFIG.clone();
@@ -62,12 +57,7 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
 }
 
 fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
-    let now_ns = time::SystemTime::now()
-        .duration_since(time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let file_identifier =
-        base64::engine::general_purpose::STANDARD_NO_PAD.encode(now_ns.to_string());
+    let file_identifier = time_id().unwrap();
     let file_name = format!("{file_identifier}.%(id)s.%(ext)s");
 
     meme_dir.into().join(file_name)

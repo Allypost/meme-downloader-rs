@@ -2,6 +2,7 @@ use std::fmt::{Debug, Display};
 
 #[allow(clippy::module_name_repetitions)]
 #[allow(clippy::clone_double_ref)]
+#[allow(dead_code)]
 pub fn check_results<TVal: Debug, TErr: Display>(
     result: Vec<Result<TVal, TErr>>,
 ) -> Result<Vec<TVal>, String> {

@@ -3,7 +3,7 @@ use crate::{
     config::CONFIG,
     helpers::{ffprobe, results::option_contains, trash::move_to_trash},
 };
-use log::{debug, info};
+use log::{debug, info, trace};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{
     fmt::Display,
@@ -14,17 +14,48 @@ use std::{
 pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     info!("Auto cropping video {file_path:?}");
 
+    let media_info = ffprobe::ffprobe(file_path).map_err(|e| format!("{e:?}"))?;
+    let video_stream = media_info
+        .streams
+        .iter()
+        .find(|s| option_contains(&s.codec_type, &"video".to_string()));
+
+    let video_stream = if let Some(s) = video_stream {
+        trace!("Found video stream");
+        s
+    } else {
+        info!("File does not contain a video stream, skipping");
+        return Ok(file_path.into());
+    };
+
+    let (w, h) = if let (Some(w), Some(h)) = (video_stream.width, video_stream.height) {
+        trace!("Video width: {w}, height: {h}");
+        (w, h)
+    } else {
+        return Err(format!(
+            "Failed to get video width and height for {file_path:?}"
+        ));
+    };
+
     let ffmpeg = CONFIG.clone().ffmpeg_path()?;
     let crop_filters = vec![BorderColor::White, BorderColor::Black]
         .into_par_iter()
-        .map(|color| get_crop_filters(&ffmpeg, file_path, &color).map(get_minmax_crop_filter))
-        .collect::<Result<Vec<_>, String>>()?;
+        .map(|color| get_crop_filter(&ffmpeg, file_path, &color))
+        .collect::<Result<Option<Vec<_>>, String>>()?;
+
+    let crop_filters = if let Some(crop_filters) = crop_filters {
+        trace!("Crop filters: {crop_filters:?}");
+        crop_filters
+    } else {
+        info!("No crop filters found, skipping");
+        return Ok(file_path.into());
+    };
 
     let mut final_crop_filter = CropFilter {
-        width: i32::MAX,
-        height: i32::MAX,
-        x: i32::MIN,
-        y: i32::MIN,
+        width: i64::MAX,
+        height: i64::MAX,
+        x: i64::MIN,
+        y: i64::MIN,
     };
     for crop_filter in crop_filters {
         if crop_filter.width < final_crop_filter.width {
@@ -46,32 +77,9 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
 
     debug!("Final crop filter: {final_crop_filter:?}");
 
-    let media_info = ffprobe::ffprobe(file_path).map_err(|e| format!("{e:?}"))?;
-    let video_stream = media_info
-        .streams
-        .iter()
-        .find(|s| option_contains(&s.codec_type, &"video".to_string()));
-
-    let video_stream = match video_stream {
-        Some(s) => {
-            debug!("Found video stream");
-            s
-        }
-        None => {
-            info!("File does not contain a video stream, skipping");
-            return Ok(file_path.into());
-        }
-    };
-
-    match (video_stream.width, video_stream.height) {
-        (Some(w), Some(h))
-            if i64::from(final_crop_filter.width) >= w
-                && i64::from(final_crop_filter.height) >= h =>
-        {
-            info!("Video is already cropped, skipping");
-            return Ok(file_path.into());
-        }
-        _ => {}
+    if final_crop_filter.width >= w && final_crop_filter.height >= h {
+        info!("Video is already cropped, skipping");
+        return Ok(file_path.into());
     }
 
     let new_filename = {
@@ -112,12 +120,12 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     Ok(new_filename)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 struct CropFilter {
-    width: i32,
-    height: i32,
-    x: i32,
-    y: i32,
+    width: i64,
+    height: i64,
+    x: i64,
+    y: i64,
 }
 
 impl Display for CropFilter {
@@ -139,11 +147,11 @@ enum BorderColor {
     Black,
 }
 
-fn get_crop_filters(
+fn get_crop_filter(
     ffmpeg_path: &PathBuf,
     file: &Path,
     border_color: &BorderColor,
-) -> Result<Vec<CropFilter>, String> {
+) -> Result<Option<CropFilter>, String> {
     let mut cmd = process::Command::new(ffmpeg_path);
     let cmd = cmd
         .arg("-hide_banner")
@@ -163,30 +171,44 @@ fn get_crop_filters(
     let stderr = String::from_utf8(cmd_output.stderr)
         .map_err(|e| format!("Failed to convert command output to UTF-8: {e:?}"))?;
 
-    let res = stderr
+    let mut res = stderr
         .split('\n')
         .filter(|s| s.starts_with("[Parsed_cropdetect") && s.contains("crop="))
         .map(str::trim)
         .map(|s| s.split("crop=").nth(1).unwrap())
+        .collect::<Vec<_>>();
+
+    res.sort_unstable();
+    res.dedup();
+
+    let res = res
+        .iter()
         .map(|s| {
             let mut s = s.split(':');
 
             CropFilter {
-                width: s.next().unwrap().to_string().parse::<i32>().unwrap(),
-                height: s.next().unwrap().to_string().parse::<i32>().unwrap(),
-                x: s.next().unwrap().to_string().parse::<i32>().unwrap(),
-                y: s.next().unwrap().to_string().parse::<i32>().unwrap(),
+                width: s.next().unwrap().to_string().parse::<i64>().unwrap(),
+                height: s.next().unwrap().to_string().parse::<i64>().unwrap(),
+                x: s.next().unwrap().to_string().parse::<i64>().unwrap(),
+                y: s.next().unwrap().to_string().parse::<i64>().unwrap(),
             }
-        });
+        })
+        .collect::<Vec<_>>();
 
-    Ok(res.collect())
+    Ok(get_minmax_crop_filter(res))
 }
 
-fn get_minmax_crop_filter(res: Vec<CropFilter>) -> CropFilter {
-    let mut min_x = i32::MAX;
-    let mut min_y = i32::MAX;
-    let mut max_w = i32::MIN;
-    let mut max_h = i32::MIN;
+fn get_minmax_crop_filter(res: Vec<CropFilter>) -> Option<CropFilter> {
+    trace!("get_minmax_crop_filter({res:?})");
+
+    if res.is_empty() {
+        return None;
+    }
+
+    let mut min_x = i64::MAX;
+    let mut min_y = i64::MAX;
+    let mut max_w = i64::MIN;
+    let mut max_h = i64::MIN;
     for filter in res {
         let x = filter.x;
         let y = filter.y;
@@ -207,10 +229,10 @@ fn get_minmax_crop_filter(res: Vec<CropFilter>) -> CropFilter {
         }
     }
 
-    CropFilter {
+    Some(CropFilter {
         width: max_w,
         height: max_h,
         x: min_x,
         y: min_y,
-    }
+    })
 }

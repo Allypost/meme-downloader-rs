@@ -67,10 +67,13 @@ fn convert_a_to_b(
         Ok(process::Output { status, .. }) if status.success() && to_file_path.exists() => {
             info!("Converted file {from_file_path:?} to {to_format}");
 
-            if let Err(e) = copy_file_times(&from_file_path, &to_file_path) {
-                debug!("Failed to copy file times: {e:?}");
-            } else {
-                trace!("Copied file times from {from_file_path:?}");
+            match copy_file_times(&from_file_path, &to_file_path) {
+                Err(e) => {
+                    debug!("Failed to copy file times: {e:?}");
+                }
+                Ok(_) => {
+                    trace!("Copied file times from {from_file_path:?}");
+                }
             }
 
             if move_to_trash(&from_file_path).is_ok() {

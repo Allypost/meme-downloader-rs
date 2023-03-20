@@ -20,21 +20,27 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
         .iter()
         .find(|s| option_contains(&s.codec_type, &"video".to_string()));
 
-    let video_stream = if let Some(s) = video_stream {
-        trace!("Found video stream");
-        s
-    } else {
-        info!("File does not contain a video stream, skipping");
-        return Ok(file_path.into());
+    let video_stream = match video_stream {
+        Some(s) => {
+            trace!("Found video stream");
+            s
+        }
+        None => {
+            info!("File does not contain a video stream, skipping");
+            return Ok(file_path.into());
+        }
     };
 
-    let (w, h) = if let (Some(w), Some(h)) = (video_stream.width, video_stream.height) {
-        trace!("Video width: {w}, height: {h}");
-        (w, h)
-    } else {
-        return Err(format!(
-            "Failed to get video width and height for {file_path:?}"
-        ));
+    let (w, h) = match (video_stream.width, video_stream.height) {
+        (Some(w), Some(h)) => {
+            trace!("Video width: {w}, height: {h}");
+            (w, h)
+        }
+        _ => {
+            return Err(format!(
+                "Failed to get video width and height for {file_path:?}"
+            ));
+        }
     };
 
     let ffmpeg = CONFIG.clone().ffmpeg_path()?;
@@ -43,12 +49,15 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
         .map(|color| get_crop_filter(&ffmpeg, file_path, &color))
         .collect::<Result<Option<Vec<_>>, String>>()?;
 
-    let crop_filters = if let Some(crop_filters) = crop_filters {
-        trace!("Crop filters: {crop_filters:?}");
-        crop_filters
-    } else {
-        info!("No crop filters found, skipping");
-        return Ok(file_path.into());
+    let crop_filters = match crop_filters {
+        Some(crop_filters) => {
+            trace!("Crop filters: {crop_filters:?}");
+            crop_filters
+        }
+        None => {
+            info!("No crop filters found, skipping");
+            return Ok(file_path.into());
+        }
     };
 
     let mut final_crop_filter = CropFilter {

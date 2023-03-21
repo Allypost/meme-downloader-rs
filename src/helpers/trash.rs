@@ -2,6 +2,11 @@ use log::debug;
 use std::{fs, io, path::PathBuf};
 
 pub fn move_to_trash(f: &PathBuf) -> Result<(), io::Error> {
+    if true {
+        debug!("Deleting file {f:?}");
+        return fs::remove_file(f);
+    }
+
     debug!("Sending {f:?} into trash");
 
     trash::delete(f)

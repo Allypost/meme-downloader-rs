@@ -1,12 +1,19 @@
 use crate::args;
 use crate::args::ARGS;
-use log::debug;
+use log::{debug, error, trace};
 use once_cell::sync::Lazy;
 use resolve_path::PathResolveExt;
-use std::fs;
 use std::io::{self, prelude::*};
 use std::path::PathBuf;
+use std::process::exit;
+use std::{env, fs};
 use which::which;
+
+#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+pub struct TelegramBotConfig {
+    bot_token: String,
+    pub owner_id: Option<u64>,
+}
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct Config {
@@ -14,6 +21,8 @@ pub struct Config {
     ffmpeg_path: Option<PathBuf>,
     ffprobe_path: Option<PathBuf>,
     memes_directory: Option<PathBuf>,
+
+    pub telegram: Option<TelegramBotConfig>,
 }
 
 impl Config {
@@ -23,7 +32,16 @@ impl Config {
         let config_file = config_dir.join("meme-downloader").join("config.toml");
         if config_file.exists() {
             let config_file = fs::read_to_string(config_file).unwrap();
-            config = toml::from_str(&config_file).unwrap();
+            config = match toml::from_str(&config_file) {
+                Ok(config) => {
+                    trace!("Parsed config file successfully");
+                    config
+                }
+                Err(e) => {
+                    error!("Error parsing config file: {:?}", e);
+                    exit(1);
+                }
+            };
         } else {
             debug!("Config file not found. Creating one at {:#?}", config_file);
             if let Ok(memes_dir) = config.clone().memes_dir() {
@@ -70,6 +88,42 @@ impl Config {
             Ok(path) => Ok(path.into()),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn telegram_bot_token(&self) -> Option<String> {
+        let args = ARGS.clone();
+
+        args.telegram_bot_token
+            .map(|t| {
+                debug!("Using bot token from arguments");
+                t
+            })
+            .or_else(|| self.telegram.as_ref().map(|t| &t.bot_token).cloned())
+            .map(|t| {
+                debug!("Using bot token from config");
+                t
+            })
+            .or_else(|| env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN").ok())
+            .map(|t| {
+                debug!("Using bot token from environment variable");
+                t
+            })
+    }
+
+    pub fn telegram_owner_id(self) -> Option<u64> {
+        if let Some(id) = ARGS.clone().telegram_owner_id {
+            return Some(id);
+        }
+
+        if let Some(Some(id)) = self.telegram.as_ref().map(|t| t.owner_id) {
+            return Some(id);
+        }
+
+        if let Ok(id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {
+            return id.parse().ok();
+        }
+
+        None
     }
 }
 

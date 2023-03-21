@@ -13,6 +13,7 @@ use std::{
 };
 
 mod args;
+mod bot;
 mod config;
 mod downloaders;
 mod fixers;
@@ -23,6 +24,16 @@ extern crate sanitize_filename;
 
 fn main() {
     let args = args::ARGS.clone();
+
+    if args.telegram_run_as_bot {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(bot::telegram::run());
+        info!("Bot stopped");
+        return;
+    }
 
     let download_url = args.download_url.unwrap_or_else(|| {
         if atty::isnt(atty::Stream::Stdin) {

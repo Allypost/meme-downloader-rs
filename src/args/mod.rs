@@ -19,6 +19,19 @@ pub struct Args {
     /// The URL to download media from
     #[arg(default_value = None)]
     pub download_url: Option<String>,
+
+    /// Run as a Telegram bot.
+    /// Requires setting a bot token in the config under the `[telegram] bot_token` key,
+    /// setting the `telegram-bot-token` argument,
+    /// or by passing it via the `MEME_DOWNLOADER_TELEGRAM_TOKEN` environment variable
+    #[arg(long = "as-telegram-bot")]
+    pub telegram_run_as_bot: bool,
+    /// The telegram bot token. <https://core.telegram.org/bots/features#botfather>
+    #[arg(long, default_value = None, value_name = "BOT_TOKEN")]
+    pub telegram_bot_token: Option<String>,
+    /// The Telegram user ID of the owner of the bot. Used to restrict access to the bot or allow additional commands
+    #[arg(long, default_value = None, value_name = "OWNER_ID")]
+    pub telegram_owner_id: Option<u64>,
 }
 
 pub static ARGS: Lazy<Args> = Lazy::new(Args::parse);

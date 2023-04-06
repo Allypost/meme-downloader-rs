@@ -3,13 +3,12 @@
 #![allow(clippy::single_match_else)]
 
 use crate::config::CONFIG;
-use log::{debug, error, info, trace};
+use log::{error, info, trace};
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::{
-    env, fs,
+    fs,
     io::{self, Write},
-    path::Path,
     process::exit,
 };
 
@@ -19,6 +18,7 @@ mod config;
 mod downloaders;
 mod fixers;
 mod helpers;
+mod logger;
 mod notif;
 
 extern crate sanitize_filename;
@@ -47,7 +47,7 @@ fn main() {
         return io::stdin().lock().lines().next().unwrap().unwrap();
     });
 
-    init_logger(&download_url);
+    logger::init(&download_url);
 
     trace!("Config: {:?}", config::CONFIG);
     trace!("Args: {:?}", args::ARGS);
@@ -121,66 +121,4 @@ fn main() {
             exit(1);
         }
     }
-}
-
-fn init_logger<S: AsRef<str>>(download_url: S) {
-    let program_name = get_program_name();
-    let mut tmp_file = format!("{program_name}_{url}", url = download_url.as_ref());
-    if cfg!(target_os = "windows") {
-        tmp_file = format!("{tmp_file}.txt");
-    }
-    let tmp_file = sanitize_filename::sanitize_with_options(
-        tmp_file,
-        sanitize_filename::Options {
-            truncate: true,
-            replacement: "^",
-            ..Default::default()
-        },
-    );
-    let tmp_file = env::temp_dir().join(tmp_file);
-    fs::create_dir_all(tmp_file.parent().unwrap()).unwrap();
-
-    let stdout = log4rs::append::console::ConsoleAppender::builder()
-        .target(log4rs::append::console::Target::Stdout)
-        .build();
-    let log = log4rs::append::file::FileAppender::builder()
-        .build(&tmp_file)
-        .unwrap();
-
-    let config = log4rs::config::Config::builder()
-        .appender(
-            log4rs::config::Appender::builder()
-                .filter(Box::new(log4rs::filter::threshold::ThresholdFilter::new(
-                    log::LevelFilter::Info,
-                )))
-                .build("logfile", Box::new(log)),
-        )
-        .appender(
-            log4rs::config::Appender::builder()
-                .filter(Box::new(log4rs::filter::threshold::ThresholdFilter::new(
-                    log::LevelFilter::Trace,
-                )))
-                .build("stdout", Box::new(stdout)),
-        )
-        .build(
-            log4rs::config::Root::builder()
-                .appender("logfile")
-                .appender("stdout")
-                .build(log::LevelFilter::Trace),
-        )
-        .unwrap();
-
-    log4rs::init_config(config).unwrap();
-
-    debug!("Logging to {:?}", &tmp_file);
-}
-
-fn get_program_name() -> String {
-    let args = env::args().collect::<Vec<String>>();
-    let program_name = Path::new(args.first().unwrap())
-        .file_stem()
-        .unwrap()
-        .to_str()
-        .unwrap();
-    program_name.to_string()
 }

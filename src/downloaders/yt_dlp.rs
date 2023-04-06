@@ -58,7 +58,7 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
 
 fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
     let file_identifier = time_id().unwrap();
-    let file_name = format!("{file_identifier}.%(id)s.%(ext)s");
+    let file_name = format!("{file_identifier}.%(id).64s.%(ext)s");
 
     meme_dir.into().join(file_name)
 }

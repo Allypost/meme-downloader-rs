@@ -124,21 +124,20 @@ fn main() {
 }
 
 fn init_logger<S: AsRef<str>>(download_url: S) {
-    let download_url_filename = sanitize_filename::sanitize_with_options(
-        download_url.as_ref(),
-        sanitize_filename::Options {
-            windows: cfg!(target_os = "windows"),
-            truncate: true,
-            replacement: "^",
-        },
-    );
     let program_name = get_program_name();
-    let mut tmp_file = format!("{program_name}_{download_url_filename}");
+    let mut tmp_file = format!("{program_name}_{url}", url = download_url.as_ref());
     if cfg!(target_os = "windows") {
         tmp_file = format!("{tmp_file}.txt");
     }
-    let mut tmp_file = env::temp_dir().join(tmp_file);
-    tmp_file.shrink_to_fit();
+    let tmp_file = sanitize_filename::sanitize_with_options(
+        tmp_file,
+        sanitize_filename::Options {
+            truncate: true,
+            replacement: "^",
+            ..Default::default()
+        },
+    );
+    let tmp_file = env::temp_dir().join(tmp_file);
     fs::create_dir_all(tmp_file.parent().unwrap()).unwrap();
 
     let stdout = log4rs::append::console::ConsoleAppender::builder()

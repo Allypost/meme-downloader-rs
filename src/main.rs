@@ -5,6 +5,7 @@
 use crate::config::CONFIG;
 use log::{debug, error, info, trace};
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::{
     env, fs,
     io::{self, Write},
@@ -50,6 +51,19 @@ fn main() {
 
     trace!("Config: {:?}", config::CONFIG);
     trace!("Args: {:?}", args::ARGS);
+
+    if args.fix {
+        let file_path = PathBuf::from(&download_url);
+
+        info!("Fixing file: {:?}", &file_path);
+
+        fixers::fix_files(&vec![file_path]).unwrap_or_else(|e| {
+            error!("Error fixing file: {:?}", e);
+            exit(1);
+        });
+
+        return;
+    }
 
     let meme_dir = CONFIG.clone().memes_dir().unwrap_or_else(|e| {
         error!("Error resolving memes directory: {:?}", e);

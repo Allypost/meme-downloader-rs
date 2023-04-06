@@ -20,6 +20,10 @@ pub struct Args {
     #[arg(default_value = None)]
     pub download_url: Option<String>,
 
+    /// Just fix the given file, don't download anything
+    #[arg(long)]
+    pub fix: bool,
+
     /// Run as a Telegram bot.
     /// Requires setting a bot token in the config under the `[telegram] bot_token` key,
     /// setting the `telegram-bot-token` argument,

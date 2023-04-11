@@ -1,0 +1,25 @@
+# git
+.gitignore
+.git
+
+# docker
+.dockerignore
+.docker
+docker-compose.yml
+docker-compose.*.yml
+
+# misc
+.DS_Store
+LICENSE
+README.md
+
+# editors
+.idea/
+
+# artefacts
+target/
+
+# editors
+.vscode/
+.idea/
+.fleet/

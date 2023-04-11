@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     bot::telegram::download_helper::{self, DownloadResult},
-    config::CONFIG,
+    config::Config,
     helpers::results::option_contains,
 };
 use futures;
@@ -23,8 +23,8 @@ pub struct MessageHandler {
 }
 
 impl MessageHandler {
-    pub fn new(bot: Bot, msg: Message) -> Self {
-        let owner_id = CONFIG.clone().telegram_owner_id();
+    pub fn new(bot: Bot, config: Config, msg: Message) -> Self {
+        let owner_id = config.telegram_owner_id();
         let is_owner = msg
             .from()
             .map_or(false, |sender| option_contains(&owner_id, &sender.id.0));

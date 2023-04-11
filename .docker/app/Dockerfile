@@ -24,3 +24,4 @@ RUN addgroup -g ${group_id} ${username}
 RUN adduser -D -u ${user_id} -G ${username} ${username}
 USER ${username}
 ENTRYPOINT ["meme-download"]
+CMD [ "--help" ]

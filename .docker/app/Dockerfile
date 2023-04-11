@@ -6,7 +6,7 @@ RUN mkdir src
 RUN echo "fn main() {}" > src/main.rs
 COPY Cargo.* ./
 RUN cargo fetch --locked
-COPY . .
+COPY src/ ./src/
 ARG features=bots
 ENV RUSTFLAGS='-C target-feature=+crt-static'
 RUN cargo install --path . --target=x86_64-unknown-linux-musl --features "$features"

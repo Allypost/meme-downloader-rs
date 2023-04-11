@@ -22,4 +22,10 @@ RUN \
   && ln -s /usr/local/bin/yt-dlp /usr/local/bin/youtube-dl \
   && echo "yt-dlp version: $(yt-dlp --version)"
 COPY --from=builder /usr/local/cargo/bin/meme-download /usr/local/bin/
+ARG username=app
+ARG user_id=1001
+ARG group_id=1002
+RUN addgroup -g ${group_id} ${username}
+RUN adduser -D -u ${user_id} -G ${username} ${username}
+USER ${username}
 ENTRYPOINT ["meme-download"]

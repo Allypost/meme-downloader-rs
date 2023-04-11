@@ -3,10 +3,12 @@ use crate::args::ARGS;
 use log::{debug, error, trace};
 use once_cell::sync::Lazy;
 use resolve_path::PathResolveExt;
+#[cfg(feature = "telegram-bot")]
+use std::env;
+use std::fs;
 use std::io::{self, prelude::*};
 use std::path::PathBuf;
 use std::process::exit;
-use std::{env, fs};
 use which::which;
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
@@ -90,6 +92,7 @@ impl Config {
         }
     }
 
+    #[cfg(feature = "telegram-bot")]
     pub fn telegram_bot_token(&self) -> Option<String> {
         let args = ARGS.clone();
 
@@ -110,6 +113,7 @@ impl Config {
             })
     }
 
+    #[cfg(feature = "telegram-bot")]
     pub fn telegram_owner_id(self) -> Option<u64> {
         if let Some(id) = ARGS.clone().telegram_owner_id {
             return Some(id);

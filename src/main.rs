@@ -19,6 +19,7 @@ mod downloaders;
 mod fixers;
 mod helpers;
 mod logger;
+#[cfg(feature = "not-static")]
 mod notif;
 
 extern crate sanitize_filename;
@@ -26,6 +27,7 @@ extern crate sanitize_filename;
 fn main() {
     let args = args::ARGS.clone();
 
+    #[cfg(feature = "telegram-bot")]
     if args.telegram_run_as_bot {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -89,34 +91,40 @@ fn main() {
                     .join(", ")
             );
 
-            let notif = notif::send_notification(&notif::NotificationInfo {
-                urgency: notify_rust::Urgency::Low,
-                timeout: notify_rust::Timeout::Milliseconds(5000),
-                icon: "success".to_string(),
-                title: "Download finished".to_string(),
-                message: format!("The meme from {} has finished downloading", &download_url),
-            });
+            #[cfg(feature = "not-static")]
+            {
+                let notif = notif::send_notification(&notif::NotificationInfo {
+                    urgency: notify_rust::Urgency::Low,
+                    timeout: notify_rust::Timeout::Milliseconds(5000),
+                    icon: "success".to_string(),
+                    title: "Download finished".to_string(),
+                    message: format!("The meme from {} has finished downloading", &download_url),
+                });
 
-            if let Err(e) = notif {
-                error!("Error sending notification: {}", e);
+                if let Err(e) = notif {
+                    error!("Error sending notification: {}", e);
+                }
             }
         }
         Err(e) => {
             error!("Error downloading file: {}", e);
 
-            let notif = notif::send_notification(&notif::NotificationInfo {
-                urgency: notify_rust::Urgency::Normal,
-                timeout: notify_rust::Timeout::Milliseconds(10_000),
-                icon: "error".to_string(),
-                title: "Download failed".to_string(),
-                message: format!(
-                    "The meme downloader couldn't download the provided page: {}",
-                    &download_url
-                ),
-            });
+            #[cfg(feature = "not-static")]
+            {
+                let notif = notif::send_notification(&notif::NotificationInfo {
+                    urgency: notify_rust::Urgency::Normal,
+                    timeout: notify_rust::Timeout::Milliseconds(10_000),
+                    icon: "error".to_string(),
+                    title: "Download failed".to_string(),
+                    message: format!(
+                        "The meme downloader couldn't download the provided page: {}",
+                        &download_url
+                    ),
+                });
 
-            if let Err(e) = notif {
-                error!("Error sending notification: {}", e);
+                if let Err(e) = notif {
+                    error!("Error sending notification: {}", e);
+                }
             }
             exit(1);
         }

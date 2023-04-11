@@ -1,5 +1,5 @@
-FROM rust:1-bookworm AS builder
-RUN apt-get update && apt-get install -y musl musl-dev musl-tools
+FROM rust:1.68-alpine3.17 AS builder
+RUN apk add --no-cache musl-dev
 RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /usr/src/app
 RUN mkdir src

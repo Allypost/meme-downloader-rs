@@ -19,7 +19,7 @@ mod downloaders;
 mod fixers;
 mod helpers;
 mod logger;
-#[cfg(feature = "not-static")]
+#[cfg(feature = "desktop-notifications")]
 mod notif;
 
 extern crate sanitize_filename;
@@ -91,7 +91,7 @@ fn main() {
                     .join(", ")
             );
 
-            #[cfg(feature = "not-static")]
+            #[cfg(feature = "desktop-notifications")]
             {
                 let notif = notif::send_notification(&notif::NotificationInfo {
                     urgency: notify_rust::Urgency::Low,
@@ -109,7 +109,7 @@ fn main() {
         Err(e) => {
             error!("Error downloading file: {}", e);
 
-            #[cfg(feature = "not-static")]
+            #[cfg(feature = "desktop-notifications")]
             {
                 let notif = notif::send_notification(&notif::NotificationInfo {
                     urgency: notify_rust::Urgency::Normal,

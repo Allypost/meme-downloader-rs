@@ -2,3 +2,5 @@
 .vscode
 .idea
 /config/
+docker-compose.*.yml
+docker-compose.*.yaml

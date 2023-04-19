@@ -15,7 +15,11 @@ FROM alpine as runner
 RUN apk -U add \
   ffmpeg \
   yt-dlp \
+  busybox-openrc \
   && echo "Done installing packages"
+RUN rc-update add crond
+COPY ./.docker/app/update-packages.sh /usr/src/update-packages.sh
+RUN echo "0 */2 * * * /bin/sh /usr/src/update-packages.sh" >> /var/spool/cron/crontabs/root
 COPY --from=builder /usr/local/cargo/bin/meme-download /usr/local/bin/
 ARG username=app
 ARG user_id=1001

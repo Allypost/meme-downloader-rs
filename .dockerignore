@@ -4,7 +4,8 @@
 
 # docker
 .dockerignore
-.docker
+.docker/
+!.docker/app/update-packages.sh
 docker-compose.yml
 docker-compose.*.yml
 

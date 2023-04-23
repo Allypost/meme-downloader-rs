@@ -16,6 +16,7 @@ RUN apk -U add \
   ffmpeg \
   yt-dlp \
   busybox-openrc \
+  sudo \
   && echo "Done installing packages"
 RUN apk update && apk add --no-cache fontconfig curl curl-dev && \
   mkdir -p /usr/share && \
@@ -32,6 +33,9 @@ ARG user_id=1001
 ARG group_id=1002
 RUN addgroup -g ${group_id} ${username}
 RUN adduser -D -u ${user_id} -G ${username} ${username}
+RUN echo -e "${username}\tALL= NOPASSWD: /usr/sbin/crond" > "/etc/sudoers.d/${username}" \
+    && chown -c root:root /etc/sudoers \
+    && chmod -c 0440 /etc/sudoers
 USER ${username}
 ENTRYPOINT ["meme-download"]
 CMD [ "--help" ]

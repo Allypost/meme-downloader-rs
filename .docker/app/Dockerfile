@@ -17,6 +17,12 @@ RUN apk -U add \
   yt-dlp \
   busybox-openrc \
   && echo "Done installing packages"
+RUN apk update && apk add --no-cache fontconfig curl curl-dev && \
+  mkdir -p /usr/share && \
+  cd /usr/share \
+  && curl -L https://github.com/Overbryd/docker-phantomjs-alpine/releases/download/2.11/phantomjs-alpine-x86_64.tar.bz2 | tar xj \
+  && ln -s /usr/share/phantomjs/phantomjs /usr/bin/phantomjs \
+  && phantomjs --version
 RUN rc-update add crond
 COPY ./.docker/app/update-packages.sh /usr/src/update-packages.sh
 RUN echo "0 */2 * * * /bin/sh /usr/src/update-packages.sh" >> /var/spool/cron/crontabs/root

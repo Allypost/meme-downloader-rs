@@ -42,9 +42,9 @@ pub fn init<S: AsRef<str>>(download_url: S) {
             .build("stdout", Box::new(stdout)),
     );
     let config = config
+        .logger(Logger::builder().build("mio", LevelFilter::Error))
         .logger(Logger::builder().build("async_io", LevelFilter::Error))
-        .logger(Logger::builder().build("polling", LevelFilter::Error));
-    let config = config
+        .logger(Logger::builder().build("polling", LevelFilter::Error))
         .build(
             Root::builder()
                 .appender("logfile")

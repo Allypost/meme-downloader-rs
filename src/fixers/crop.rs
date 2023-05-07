@@ -1,6 +1,6 @@
 use super::FixerReturn;
 use crate::{
-    config::CONFIG,
+    config::CONFIGURATION,
     helpers::{ffprobe, results::option_contains, trash::move_to_trash},
 };
 use log::{debug, info, trace};
@@ -43,10 +43,10 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
         }
     };
 
-    let ffmpeg = CONFIG.clone().ffmpeg_path()?;
+    let ffmpeg = &CONFIGURATION.ffmpeg_path;
     let crop_filters = vec![BorderColor::White, BorderColor::Black]
         .into_par_iter()
-        .map(|color| get_crop_filter(&ffmpeg, file_path, &color))
+        .map(|color| get_crop_filter(ffmpeg, file_path, &color))
         .collect::<Result<Option<Vec<_>>, String>>()?;
 
     let crop_filters = match crop_filters {

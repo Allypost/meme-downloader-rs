@@ -2,17 +2,17 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::single_match_else)]
 
-use crate::config::CONFIG;
+use crate::config::CONFIGURATION;
 use log::{error, info, trace};
 use std::io::prelude::*;
 use std::path::PathBuf;
+use std::string;
 use std::{
     fs,
     io::{self, Write},
     process::exit,
 };
 
-mod args;
 mod bot;
 mod config;
 mod downloaders;
@@ -25,10 +25,8 @@ mod notif;
 extern crate sanitize_filename;
 
 fn main() {
-    let args = args::ARGS.clone();
-
     #[cfg(feature = "telegram-bot")]
-    if args.telegram_run_as_bot {
+    if CONFIGURATION.telegram.is_some() {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
@@ -38,23 +36,25 @@ fn main() {
         return;
     }
 
-    let download_url = args.download_url.unwrap_or_else(|| {
-        if atty::isnt(atty::Stream::Stdin) {
-            error!("No download URL provided. Please provide one.");
-            exit(1);
-        }
+    let download_url = CONFIGURATION.args_download_url.as_ref().map_or_else(
+        || {
+            if atty::isnt(atty::Stream::Stdin) {
+                error!("No download URL provided. Please provide one.");
+                exit(1);
+            }
 
-        print!("Download URL: ");
-        io::stdout().flush().unwrap();
-        return io::stdin().lock().lines().next().unwrap().unwrap();
-    });
+            print!("Download URL: ");
+            io::stdout().flush().unwrap();
+            return io::stdin().lock().lines().next().unwrap().unwrap();
+        },
+        string::ToString::to_string,
+    );
 
     logger::init(&download_url);
 
-    trace!("Config: {:?}", config::CONFIG);
-    trace!("Args: {:?}", args::ARGS);
+    trace!("Config: {:?}", *config::CONFIGURATION);
 
-    if args.fix {
+    if CONFIGURATION.args_fix {
         let file_path = PathBuf::from(&download_url);
 
         info!("Fixing file: {:?}", &file_path);
@@ -67,10 +67,7 @@ fn main() {
         return;
     }
 
-    let meme_dir = CONFIG.clone().memes_dir().unwrap_or_else(|e| {
-        error!("Error resolving memes directory: {:?}", e);
-        exit(1);
-    });
+    let meme_dir = CONFIGURATION.memes_directory.clone();
     if !meme_dir.exists() {
         info!("Memes directory does not exist. Creating...");
         fs::create_dir_all(&meme_dir).unwrap_or_else(|e| {

@@ -1,0 +1,22 @@
+# The directory to save memes to.
+# If not provided, $HOME/MEMES will be used
+memes_directory = "~/MEMES"
+
+# Path to the yt-dlp executable.
+# If not provided, yt-dlp will be searched for in your path
+#yt_dlp_path = "/usr/local/bin/yt-dlp"
+
+# Path to the ffmpeg executable
+# If not provided, ffmpeg will be searched for in $PATH
+#ffmpeg_path = "/usr/bin/ffmpeg"
+
+# Path to the ffprobe executable
+# If not provided, ffprobe will be searched for in $PATH
+#ffprobe_path = "/usr/bin/ffprobe"
+
+
+# Telegram bot settings
+# ---------------------
+# [telegram]
+# bot_token = "some-bot-token"
+# owner_id = "123456789"

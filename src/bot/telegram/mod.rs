@@ -1,7 +1,4 @@
-use crate::{
-    bot::telegram::handlers::message::MessageHandler,
-    config::{Config, CONFIG},
-};
+use crate::{bot::telegram::handlers::message::MessageHandler, config::CONFIGURATION};
 use log::{debug, error, info, trace};
 use std::{process::exit, thread};
 use teloxide::prelude::*;
@@ -14,9 +11,7 @@ mod logger;
 pub async fn run() {
     logger::init();
 
-    let config = CONFIG.clone();
-
-    let bot_token = match config.telegram_bot_token() {
+    let bot_token = match CONFIGURATION.telegram.as_ref().map(|t| t.bot_token.clone()) {
         Some(token) => {
             info!("Starting Telegram bot");
             token
@@ -49,55 +44,48 @@ pub async fn run() {
 }
 
 async fn run_listener(bot: Bot) {
-    let handler =
-        Update::filter_message().endpoint(|bot: Bot, config: Config, msg: Message| async move {
-            trace!("Received message: {msg:?}");
-            thread::spawn(move || {
-                trace!("Spawned new thread for message handler");
+    let handler = Update::filter_message().endpoint(|bot: Bot, msg: Message| async move {
+        trace!("Received message: {msg:?}");
+        thread::spawn(move || {
+            trace!("Spawned new thread for message handler");
 
-                let msg_handler = MessageHandler::new(bot.clone(), config, msg.clone());
+            let msg_handler = MessageHandler::new(bot.clone(), msg.clone());
 
-                let runtime = runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .map_err(|e| format!("Error while creating runtime: {e:?}"));
+            let runtime = runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| format!("Error while creating runtime: {e:?}"));
 
-                let runtime = match runtime {
-                    Ok(runtime) => runtime,
-                    Err(e) => {
-                        error!("Error while creating runtime: {e:?}");
-                        return;
-                    }
-                };
-
-                let resp = runtime.block_on(msg_handler.handle());
-
-                if resp.is_ok() {
+            let runtime = match runtime {
+                Ok(runtime) => runtime,
+                Err(e) => {
+                    error!("Error while creating runtime: {e:?}");
                     return;
                 }
+            };
 
-                let e = resp.unwrap_err();
+            let resp = runtime.block_on(msg_handler.handle());
 
-                error!("Error while handling message: {e:?}");
+            if resp.is_ok() {
+                return;
+            }
 
-                let res = runtime.block_on(
-                    bot.send_message(msg.chat.id, format!("Error: {e:?}"))
-                        .reply_to_message_id(msg.id)
-                        .send(),
-                );
-                if let Err(e) = res {
-                    error!("Error while sending error message: {e:?}");
-                }
-            });
+            let e = resp.unwrap_err();
 
-            respond(())
+            error!("Error while handling message: {e:?}");
+
+            let res = runtime.block_on(
+                bot.send_message(msg.chat.id, format!("Error: {e:?}"))
+                    .reply_to_message_id(msg.id)
+                    .send(),
+            );
+            if let Err(e) = res {
+                error!("Error while sending error message: {e:?}");
+            }
         });
 
-    let config = CONFIG.clone();
+        respond(())
+    });
 
-    Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![config])
-        .build()
-        .dispatch()
-        .await;
+    Dispatcher::builder(bot, handler).build().dispatch().await;
 }

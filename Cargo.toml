@@ -7,6 +7,7 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.71"
 atty = "0.2.14"
 base64 = "0.21.0"
 clap = { version = "4.1.8", features = ["derive"] }
@@ -15,6 +16,7 @@ filetime = "0.2.20"
 fs_extra = "1.3.0"
 futures = { optional = true, version = "0.3.27"}
 infer = "0.13.0"
+lazy_static = "1.4.0"
 log = "0.4.17"
 log4rs = "1.2.0"
 notify-rust = { optional = true, version = "4.8.0"}
@@ -34,21 +36,10 @@ url = "2.3.1"
 which = "4.4.0"
 
 [features]
-default = [
-  # "desktop-notifications",
-  # "bots",
-]
-bots = [
-  "telegram-bot",
-]
-desktop-notifications = [
-  "dep:notify-rust",
-]
-telegram-bot = [
-  "dep:tokio",
-  "dep:teloxide",
-  "dep:futures",
-]
+default = []
+bots = ["telegram-bot"]
+desktop-notifications = ["dep:notify-rust"]
+telegram-bot = ["dep:tokio", "dep:teloxide", "dep:futures"]
 
 [profile.release]
 strip = true

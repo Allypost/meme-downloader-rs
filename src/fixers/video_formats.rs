@@ -1,6 +1,6 @@
 use super::FixerReturn;
 use crate::{
-    config::CONFIG,
+    config::CONFIGURATION,
     helpers::{ffprobe, results::option_contains, trash::move_to_trash},
 };
 use filetime::FileTime;
@@ -46,7 +46,7 @@ fn convert_a_to_b(
 
     info!("Converting file {from_file_path:?} to {to_format}");
 
-    let ffmpeg_path = CONFIG.clone().ffmpeg_path()?;
+    let ffmpeg_path = &CONFIGURATION.ffmpeg_path;
     debug!("`ffmpeg' binary: {ffmpeg_path:?}");
     let mut cmd = process::Command::new(ffmpeg_path);
     let cmd = cmd
@@ -141,7 +141,7 @@ fn reencode_video_file(file_path: &PathBuf) -> Result<PathBuf, String> {
     let old_mtime = FileTime::from_last_modification_time(&old_meta);
     let old_atime = FileTime::from_last_access_time(&old_meta);
 
-    let ffmpeg_path = CONFIG.clone().ffmpeg_path()?;
+    let ffmpeg_path = &CONFIGURATION.ffmpeg_path;
     let mut cmd = process::Command::new(ffmpeg_path);
     let cmd = cmd
         .args(["-i", file_path.to_str().unwrap()])

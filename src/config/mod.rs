@@ -1,23 +1,33 @@
-use crate::args;
-use crate::args::ARGS;
+use anyhow::{anyhow, bail};
+use clap::Parser;
+use lazy_static::lazy_static;
 use log::{debug, error, trace};
-use once_cell::sync::Lazy;
 use resolve_path::PathResolveExt;
-#[cfg(feature = "telegram-bot")]
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
-use std::io::{self, prelude::*};
-use std::path::PathBuf;
-use std::process::exit;
+use std::io::prelude::*;
+use std::path::{Path, PathBuf};
+
 use which::which;
 
-#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+lazy_static! {
+    pub static ref CONFIGURATION: Configuration = Configuration::new();
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+/// Configuration for the Telegram bot functionality
 pub struct TelegramBotConfig {
-    bot_token: String,
+    /// The Telegram bot token. <https://core.telegram.org/bots/features#creating-a-new-bot>
+    pub bot_token: String,
+
+    /// The Telegram user ID of the owner of the bot.
+    /// Used to restrict access to the bot or allow additional commands
+    /// By default, also saves media sent by the owner to the memes directory
     pub owner_id: Option<u64>,
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Config {
     yt_dlp_path: Option<PathBuf>,
     ffmpeg_path: Option<PathBuf>,
@@ -27,120 +37,330 @@ pub struct Config {
     pub telegram: Option<TelegramBotConfig>,
 }
 
-impl Config {
-    fn parse() -> Self {
-        let mut config: Self = Self::default();
-        let config_dir = dirs::config_dir().unwrap();
-        let config_file = config_dir.join("meme-downloader").join("config.toml");
-        if config_file.exists() {
-            let config_file = fs::read_to_string(config_file).unwrap();
-            config = match toml::from_str(&config_file) {
-                Ok(config) => {
-                    trace!("Parsed config file successfully");
-                    config
-                }
-                Err(e) => {
-                    error!("Error parsing config file: {:?}", e);
-                    exit(1);
-                }
-            };
-        } else {
-            debug!("Config file not found. Creating one at {:#?}", config_file);
-            if let Ok(memes_dir) = config.clone().memes_dir() {
-                config.memes_directory = Some(memes_dir);
+#[derive(Debug, Default)]
+pub struct Configuration {
+    pub args_download_url: Option<String>,
+    pub args_fix: bool,
+    pub config_path: PathBuf,
+
+    pub yt_dlp_path: PathBuf,
+    pub ffmpeg_path: PathBuf,
+    pub ffprobe_path: PathBuf,
+
+    pub memes_directory: PathBuf,
+
+    pub telegram: Option<TelegramBotConfig>,
+}
+
+impl Configuration {
+    fn new() -> Self {
+        let mut config = Self::default();
+        let args = Args::parse();
+        let file_config = FileConfiguration::new();
+
+        config.merge_file_config(&file_config);
+        config.merge_env(&args);
+        config.merge_args(&args);
+
+        {
+            if config.yt_dlp_path.as_os_str().is_empty() {
+                config.yt_dlp_path = which("yt-dlp")
+                    .map_err(|e| anyhow!("yt-dlp not found: {}", e))
+                    .unwrap();
             }
-            let config_dir = config_file.parent().unwrap();
-            fs::create_dir_all(config_dir).unwrap();
-            let mut config_file = fs::File::create(config_file).unwrap();
-            let config = toml::to_string_pretty(&config).unwrap();
-            config_file.write_all(config.as_bytes()).unwrap();
+        }
+
+        {
+            if config.ffmpeg_path.as_os_str().is_empty() {
+                config.ffmpeg_path = which("ffmpeg")
+                    .map_err(|e| anyhow!("ffmpeg not found: {}", e))
+                    .unwrap();
+            }
+        }
+
+        {
+            if config.ffprobe_path.as_os_str().is_empty() {
+                config.ffprobe_path = which("ffprobe")
+                    .map_err(|e| anyhow!("ffprobe not found: {}", e))
+                    .unwrap();
+            }
+        }
+
+        {
+            if config.memes_directory.as_os_str().is_empty() {
+                config.memes_directory = dirs::home_dir().unwrap().join("MEMES");
+            }
+            config.memes_directory = config.memes_directory.try_resolve().unwrap().into();
         }
 
         config
     }
 
-    pub fn yt_dlp_path(self) -> Result<PathBuf, String> {
-        let args = ARGS.clone();
-        let yt_dlp_path = args.yt_dlp_path.or(self.yt_dlp_path);
-        config_or_which(&yt_dlp_path, "yt-dlp")
-    }
-
-    pub fn ffmpeg_path(self) -> Result<PathBuf, String> {
-        let ffmpeg_path = self.ffmpeg_path;
-        config_or_which(&ffmpeg_path, "ffmpeg")
-    }
-
-    pub fn ffprobe_path(self) -> Result<PathBuf, String> {
-        let ffprobe_path = self.ffprobe_path;
-        config_or_which(&ffprobe_path, "ffprobe")
-    }
-
-    pub fn memes_dir(self) -> Result<PathBuf, io::Error> {
-        let args = args::ARGS.clone();
-
-        let raw_path = args
-            .memes_directory
-            .or(self.memes_directory)
-            .unwrap_or_else(|| {
-                let home_dir = dirs::home_dir().unwrap();
-                home_dir.join("MEMES")
-            });
-
-        match raw_path.try_resolve() {
-            Ok(path) => Ok(path.into()),
-            Err(e) => Err(e),
-        }
-    }
-
-    #[cfg(feature = "telegram-bot")]
-    pub fn telegram_bot_token(&self) -> Option<String> {
-        let args = ARGS.clone();
-
-        args.telegram_bot_token
-            .map(|t| {
-                debug!("Using bot token from arguments");
-                t
-            })
-            .or_else(|| self.telegram.as_ref().map(|t| &t.bot_token).cloned())
-            .map(|t| {
-                debug!("Using bot token from config");
-                t
-            })
-            .or_else(|| env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN").ok())
-            .map(|t| {
-                debug!("Using bot token from environment variable");
-                t
-            })
-    }
-
-    #[cfg(feature = "telegram-bot")]
-    pub fn telegram_owner_id(self) -> Option<u64> {
-        if let Some(id) = ARGS.clone().telegram_owner_id {
-            return Some(id);
+    fn merge_env(&mut self, #[allow(unused_variables)] args: &Args) -> &Self {
+        if let Ok(config_path) = env::var("MEME_DOWNLOADER_CONFIG_PATH") {
+            self.config_path = PathBuf::from(config_path);
         }
 
-        if let Some(Some(id)) = self.telegram.as_ref().map(|t| t.owner_id) {
-            return Some(id);
+        #[cfg(feature = "telegram-bot")]
+        {
+            if args.telegram_run_as_bot {
+                let mut telegram_config = TelegramBotConfig {
+                    bot_token: "".to_string(),
+                    owner_id: None,
+                };
+
+                if let Ok(token) = env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN") {
+                    debug!("Telegram bot token set from environment variable");
+                    telegram_config.bot_token = token;
+                }
+
+                if telegram_config.bot_token.is_empty() {
+                    error!("Telegram bot token not set");
+                    exit(1);
+                }
+
+                if let Ok(owner_id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {
+                    if let Ok(owner_id) = owner_id.parse::<u64>() {
+                        telegram_config.owner_id = Some(owner_id);
+                    } else {
+                        error!("Invalid Telegram owner ID");
+                        exit(1);
+                    }
+                }
+
+                self.telegram = Some(telegram_config);
+            }
         }
 
-        if let Ok(id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {
-            return id.parse().ok();
-        }
+        self
+    }
 
-        None
+    fn merge_args(&mut self, args: &Args) -> &Self {
+        args.merge_into_config(self);
+
+        self
+    }
+
+    fn merge_file_config(&mut self, file_config: &FileConfiguration) -> &Self {
+        file_config.merge_into_config(self);
+
+        self
     }
 }
 
-fn config_or_which(field: &Option<PathBuf>, program: &str) -> Result<PathBuf, String> {
-    field
-        .clone()
-        .ok_or_else(|| format!("`{program}' path not found in config.toml"))
-        .or_else(|_e| which(program))
-        .map_err(|e| {
-            format!(
-                "`{program}' not found in PATH or config. Please install it or specify the path in config.toml. Error: {e}"
+#[derive(Debug, Clone, Parser)]
+pub struct Args {
+    /// The URL to download media from
+    #[arg(default_value = None)]
+    pub download_url: Option<String>,
+    /// Just fix the given file, don't download anything
+    #[arg(long)]
+    pub fix: bool,
+    /// Location of the configuration file.
+    /// By default shoud be in the os-appropriate config directory
+    /// under the name `meme-downloader/config.toml`
+    #[arg(short='c', long, default_value = None)]
+    pub config_path: Option<PathBuf>,
+
+    /// Path to the yt-dlp executable.
+    /// If not provided, yt-dlp will be searched for in $PATH
+    #[arg(long, default_value = None)]
+    pub yt_dlp_path: Option<PathBuf>,
+    /// Path to the ffmpeg executable.
+    /// If not provided, ffmpeg will be searched for in $PATH
+    #[arg(long, default_value = None)]
+    pub ffmpeg_path: Option<PathBuf>,
+    /// Path to the ffprobe executable.
+    /// If not provided, ffprobe will be searched for in $PATH
+    #[arg(long, default_value = None)]
+    pub ffprobe_path: Option<PathBuf>,
+    /// The directory to save memes to.
+    /// If not provided, `$HOME/MEMES' will be used
+    #[arg(short='d', long, default_value = None)]
+    pub memes_directory: Option<PathBuf>,
+
+    /// Run as a Telegram bot.
+    /// Requires setting a bot token in the config under the `[telegram] bot_token` key,
+    /// setting the `telegram-bot-token` argument,
+    /// or by passing it via the `MEME_DOWNLOADER_TELEGRAM_TOKEN` environment variable
+    #[cfg(feature = "telegram-bot")]
+    #[cfg_attr(feature = "telegram-bot", arg(long = "as-telegram-bot"))]
+    pub telegram_run_as_bot: bool,
+    /// The telegram bot token. <https://core.telegram.org/bots/features#botfather>
+    #[cfg(feature = "telegram-bot")]
+    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "BOT_TOKEN"))]
+    pub telegram_bot_token: Option<String>,
+    /// The Telegram user ID of the owner of the bot. Used to restrict access to the bot or allow additional commands
+    #[cfg(feature = "telegram-bot")]
+    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "OWNER_ID"))]
+    pub telegram_owner_id: Option<u64>,
+}
+
+impl Args {
+    fn merge_into_config(&self, config: &mut Configuration) {
+        if let Some(yt_dlp_path) = &self.yt_dlp_path {
+            debug!(
+                "Found yt-dlp path from arguments: {:?}",
+                yt_dlp_path.display()
+            );
+            config.yt_dlp_path = yt_dlp_path.into();
+        }
+
+        if let Some(memes_directory) = &self.memes_directory {
+            debug!(
+                "Found memes directory from arguments: {:?}",
+                memes_directory.display()
+            );
+            config.memes_directory = memes_directory.into();
+        }
+
+        #[cfg(feature = "telegram-bot")]
+        if self.telegram_run_as_bot {
+            if let Some(telegram_bot_token) = &self.telegram_bot_token {
+                config.telegram = Some(TelegramBotConfig {
+                    bot_token: telegram_bot_token.into(),
+                    owner_id: self.telegram_owner_id,
+                });
+            }
+        }
+
+        if let Some(config_path) = &self.config_path {
+            config.config_path = config_path.into();
+        }
+
+        config.args_download_url = self.download_url.clone();
+        config.args_fix = self.fix;
+    }
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct FileConfiguration {
+    /// Path to the yt-dlp executable
+    /// If not provided, yt-dlp will be searched for in $PATH
+    pub yt_dlp_path: Option<PathBuf>,
+
+    /// Path to the ffmpeg executable
+    /// If not provided, ffmpeg will be searched for in $PATH
+    pub ffmpeg_path: Option<PathBuf>,
+
+    /// Path to the ffprobe executable
+    /// If not provided, ffprobe will be searched for in $PATH
+    pub ffprobe_path: Option<PathBuf>,
+
+    /// The directory to save memes to.
+    /// If not provided, $HOME/MEMES will be used
+    pub memes_directory: Option<PathBuf>,
+
+    pub telegram: Option<TelegramBotConfig>,
+}
+
+impl FileConfiguration {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    #[allow(clippy::unused_self)]
+    fn merge_into_config(&self, config: &mut Configuration) {
+        if Self::is_default_config_path(&config.config_path) {
+            config.config_path = Self::create_default_config_file().unwrap();
+        }
+
+        let file_config = Self::load_from_file(&config.config_path).unwrap();
+
+        if let Some(yt_dlp_path) = file_config.yt_dlp_path {
+            debug!("Found yt-dlp path from config file: {:?}", yt_dlp_path);
+            config.yt_dlp_path = yt_dlp_path;
+        }
+
+        if let Some(ffmpeg_path) = file_config.ffmpeg_path {
+            debug!("Found ffmpeg path from config file: {:?}", ffmpeg_path);
+            config.ffmpeg_path = ffmpeg_path;
+        }
+
+        if let Some(ffprobe_path) = file_config.ffprobe_path {
+            debug!("Found ffprobe path from config file: {:?}", ffprobe_path);
+            config.ffprobe_path = ffprobe_path;
+        }
+
+        if let Some(memes_directory) = file_config.memes_directory {
+            debug!(
+                "Found memes directory from config file: {:?}",
+                memes_directory
+            );
+            config.memes_directory = memes_directory;
+        }
+
+        if let Some(telegram) = file_config.telegram {
+            debug!("Found telegram config from config file: {:?}", telegram);
+            config.telegram = Some(telegram);
+        }
+    }
+
+    fn load_from_file<P>(path: P) -> Option<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let p = path.as_ref();
+
+        if !p.is_file() {
+            error!("Config file {:#?} does not exist or is not a file", &p);
+            return None;
+        }
+
+        let config_file = fs::read_to_string(p).unwrap();
+        match toml::from_str(&config_file) {
+            Ok(config) => {
+                trace!("Parsed config file successfully");
+                config
+            }
+            Err(e) => {
+                error!("Error parsing config file: {:?}", e);
+                None
+            }
+        }
+    }
+
+    fn create_default_config_file() -> anyhow::Result<PathBuf> {
+        let config_dir: PathBuf = dirs::config_dir().ok_or_else(|| {
+            anyhow!(
+                "Failed to get config directory. \
+                Please set the MEME_DOWNLOADER_CONFIG_DIR environment variable to a valid directory"
             )
-        })
-}
+        })?;
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir)?;
+        }
 
-pub static CONFIG: Lazy<Config> = Lazy::new(Config::parse);
+        let file = config_dir.join("meme-downloader").join("config.toml");
+
+        if !file.exists() {
+            debug!("Config file not found. Creating one at {:#?}", file);
+            let mut f = fs::File::create(&file);
+            let res: Result<_, _> = f
+                .as_mut()
+                .map(|f| f.write_all(include_bytes!("./config.toml")));
+
+            if let Err(e) = res {
+                error!("Failed to create config file: {}", e);
+                bail!("Failed to create config file: {}", e);
+            }
+        }
+
+        Ok(file)
+    }
+
+    fn default_config_path() -> PathBuf {
+        let config_dir = dirs::config_dir().unwrap();
+
+        config_dir.join("meme-downloader").join("config.toml")
+    }
+
+    fn is_default_config_path<P>(path: P) -> bool
+    where
+        P: AsRef<Path>,
+    {
+        let p = path.as_ref().as_os_str();
+
+        p.is_empty() || p == Self::default_config_path().as_os_str()
+    }
+}

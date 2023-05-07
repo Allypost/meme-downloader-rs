@@ -1,12 +1,10 @@
 use super::DownloaderReturn;
-use crate::{config, downloaders::USER_AGENT, helpers::various::time_id};
+use crate::{config::CONFIGURATION, downloaders::USER_AGENT, helpers::various::time_id};
 use log::{debug, info};
 use std::{path::PathBuf, process};
 
 pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
-    let config = config::CONFIG.clone();
-
-    let yt_dlp = config.yt_dlp_path()?;
+    let yt_dlp = &CONFIGURATION.yt_dlp_path;
     debug!("`yt-dlp' binary: {:#?}", &yt_dlp);
     let output_template = get_output_template(meme_dir);
     debug!("template: {:#?}", &output_template);

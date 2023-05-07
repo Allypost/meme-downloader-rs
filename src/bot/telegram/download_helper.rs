@@ -1,4 +1,4 @@
-use crate::{config::CONFIG, downloaders, helpers::various::time_id};
+use crate::{config::CONFIGURATION, downloaders, helpers::various::time_id};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{env, fs, path::PathBuf};
 
@@ -21,10 +21,7 @@ impl DownloadResult {
     }
 
     pub fn move_files_to_memes_dir(&self) -> Result<Vec<PathBuf>, String> {
-        let memes_dir = CONFIG
-            .clone()
-            .memes_dir()
-            .map_err(|e| format!("Error while getting memes dir from config: {e:?}"))?;
+        let memes_dir = &CONFIGURATION.memes_directory;
 
         self.files
             .par_iter()

@@ -93,6 +93,16 @@ impl Configuration {
             config.memes_directory = config.memes_directory.try_resolve().unwrap().into();
         }
 
+        #[cfg(feature = "telegram-bot")]
+        {
+            if args.telegram_run_as_bot {
+                if config.telegram.is_none() {
+                    eprintln!("Telegram bot config not set");
+                    exit(1);
+                }
+            }
+        }
+
         config
     }
 
@@ -112,11 +122,6 @@ impl Configuration {
                 if let Ok(token) = env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN") {
                     println!("Telegram bot token set from environment variable");
                     telegram_config.bot_token = token;
-                }
-
-                if telegram_config.bot_token.is_empty() {
-                    eprintln!("Telegram bot token not set");
-                    exit(1);
                 }
 
                 if let Ok(owner_id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {

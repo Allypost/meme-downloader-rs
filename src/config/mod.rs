@@ -1,7 +1,6 @@
 use anyhow::{anyhow, bail};
 use clap::Parser;
 use lazy_static::lazy_static;
-use log::{debug, error, trace};
 use resolve_path::PathResolveExt;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -10,7 +9,6 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 #[cfg(feature = "telegram-bot")]
 use std::process::exit;
-
 use which::which;
 
 lazy_static! {
@@ -112,12 +110,12 @@ impl Configuration {
                 };
 
                 if let Ok(token) = env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN") {
-                    debug!("Telegram bot token set from environment variable");
+                    println!("Telegram bot token set from environment variable");
                     telegram_config.bot_token = token;
                 }
 
                 if telegram_config.bot_token.is_empty() {
-                    error!("Telegram bot token not set");
+                    eprintln!("Telegram bot token not set");
                     exit(1);
                 }
 
@@ -125,7 +123,7 @@ impl Configuration {
                     if let Ok(owner_id) = owner_id.parse::<u64>() {
                         telegram_config.owner_id = Some(owner_id);
                     } else {
-                        error!("Invalid Telegram owner ID");
+                        eprintln!("Invalid Telegram owner ID");
                         exit(1);
                     }
                 }
@@ -201,7 +199,7 @@ pub struct Args {
 impl Args {
     fn merge_into_config(&self, config: &mut Configuration) {
         if let Some(yt_dlp_path) = &self.yt_dlp_path {
-            debug!(
+            println!(
                 "Found yt-dlp path from arguments: {:?}",
                 yt_dlp_path.display()
             );
@@ -209,7 +207,7 @@ impl Args {
         }
 
         if let Some(memes_directory) = &self.memes_directory {
-            debug!(
+            println!(
                 "Found memes directory from arguments: {:?}",
                 memes_directory.display()
             );
@@ -270,22 +268,22 @@ impl FileConfiguration {
         let file_config = Self::load_from_file(&config.config_path).unwrap();
 
         if let Some(yt_dlp_path) = file_config.yt_dlp_path {
-            debug!("Found yt-dlp path from config file: {:?}", yt_dlp_path);
+            println!("Found yt-dlp path from config file: {:?}", yt_dlp_path);
             config.yt_dlp_path = yt_dlp_path;
         }
 
         if let Some(ffmpeg_path) = file_config.ffmpeg_path {
-            debug!("Found ffmpeg path from config file: {:?}", ffmpeg_path);
+            println!("Found ffmpeg path from config file: {:?}", ffmpeg_path);
             config.ffmpeg_path = ffmpeg_path;
         }
 
         if let Some(ffprobe_path) = file_config.ffprobe_path {
-            debug!("Found ffprobe path from config file: {:?}", ffprobe_path);
+            println!("Found ffprobe path from config file: {:?}", ffprobe_path);
             config.ffprobe_path = ffprobe_path;
         }
 
         if let Some(memes_directory) = file_config.memes_directory {
-            debug!(
+            println!(
                 "Found memes directory from config file: {:?}",
                 memes_directory
             );
@@ -293,7 +291,7 @@ impl FileConfiguration {
         }
 
         if let Some(telegram) = file_config.telegram {
-            debug!("Found telegram config from config file: {:?}", telegram);
+            println!("Found telegram config from config file: {:?}", telegram);
             config.telegram = Some(telegram);
         }
     }
@@ -305,18 +303,18 @@ impl FileConfiguration {
         let p = path.as_ref();
 
         if !p.is_file() {
-            error!("Config file {:#?} does not exist or is not a file", &p);
+            eprintln!("Config file {:#?} does not exist or is not a file", &p);
             return None;
         }
 
         let config_file = fs::read_to_string(p).unwrap();
         match toml::from_str(&config_file) {
             Ok(config) => {
-                trace!("Parsed config file successfully");
+                println!("Parsed config file successfully");
                 config
             }
             Err(e) => {
-                error!("Error parsing config file: {:?}", e);
+                eprintln!("Error parsing config file: {:?}", e);
                 None
             }
         }
@@ -336,14 +334,14 @@ impl FileConfiguration {
         let file = config_dir.join("meme-downloader").join("config.toml");
 
         if !file.exists() {
-            debug!("Config file not found. Creating one at {:#?}", file);
+            println!("Config file not found. Creating one at {:#?}", file);
             let mut f = fs::File::create(&file);
             let res: Result<_, _> = f
                 .as_mut()
                 .map(|f| f.write_all(include_bytes!("./config.toml")));
 
             if let Err(e) = res {
-                error!("Failed to create config file: {}", e);
+                eprintln!("Failed to create config file: {}", e);
                 bail!("Failed to create config file: {}", e);
             }
         }

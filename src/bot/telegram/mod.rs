@@ -11,7 +11,11 @@ mod logger;
 pub async fn run() {
     logger::init();
 
-    let bot_token = match CONFIGURATION.telegram.as_ref().map(|t| t.bot_token.clone()) {
+    let bot_token: &str = match CONFIGURATION
+        .telegram
+        .as_ref()
+        .map(|t| t.bot_token.as_ref())
+    {
         Some(token) => {
             info!("Starting Telegram bot");
             token

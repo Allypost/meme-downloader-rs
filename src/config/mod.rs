@@ -95,11 +95,9 @@ impl Configuration {
 
         #[cfg(feature = "telegram-bot")]
         {
-            if args.telegram_run_as_bot {
-                if config.telegram.is_none() {
-                    eprintln!("Telegram bot config not set");
-                    exit(1);
-                }
+            if args.telegram_run_as_bot && config.telegram.is_none() {
+                eprintln!("Telegram bot config not set");
+                exit(1);
             }
         }
 
@@ -114,26 +112,31 @@ impl Configuration {
         #[cfg(feature = "telegram-bot")]
         {
             if args.telegram_run_as_bot {
-                let mut telegram_config = TelegramBotConfig {
-                    bot_token: "".to_string(),
-                    owner_id: None,
-                };
-
                 if let Ok(token) = env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN") {
                     println!("Telegram bot token set from environment variable");
-                    telegram_config.bot_token = token;
-                }
-
-                if let Ok(owner_id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {
-                    if let Ok(owner_id) = owner_id.parse::<u64>() {
-                        telegram_config.owner_id = Some(owner_id);
+                    if let Some(ref mut config) = self.telegram {
+                        config.bot_token = token;
                     } else {
-                        eprintln!("Invalid Telegram owner ID");
-                        exit(1);
+                        self.telegram = Some(TelegramBotConfig {
+                            bot_token: token,
+                            owner_id: None,
+                        });
                     }
                 }
 
-                self.telegram = Some(telegram_config);
+                if let Ok(owner_id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {
+                    println!("Telegram owner ID set from environment variable");
+                    match (&mut self.telegram, owner_id.parse::<u64>()) {
+                        (Some(ref mut config), Ok(owner_id)) => {
+                            config.owner_id = Some(owner_id);
+                        }
+                        (Some(_), Err(e)) => {
+                            eprintln!("Invalid Telegram owner ID: {e:?}");
+                            exit(1);
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
 
@@ -273,30 +276,27 @@ impl FileConfiguration {
         let file_config = Self::load_from_file(&config.config_path).unwrap();
 
         if let Some(yt_dlp_path) = file_config.yt_dlp_path {
-            println!("Found yt-dlp path from config file: {:?}", yt_dlp_path);
+            println!("Found yt-dlp path from config file: {yt_dlp_path:?}");
             config.yt_dlp_path = yt_dlp_path;
         }
 
         if let Some(ffmpeg_path) = file_config.ffmpeg_path {
-            println!("Found ffmpeg path from config file: {:?}", ffmpeg_path);
+            println!("Found ffmpeg path from config file: {ffmpeg_path:?}");
             config.ffmpeg_path = ffmpeg_path;
         }
 
         if let Some(ffprobe_path) = file_config.ffprobe_path {
-            println!("Found ffprobe path from config file: {:?}", ffprobe_path);
+            println!("Found ffprobe path from config file: {ffprobe_path:?}");
             config.ffprobe_path = ffprobe_path;
         }
 
         if let Some(memes_directory) = file_config.memes_directory {
-            println!(
-                "Found memes directory from config file: {:?}",
-                memes_directory
-            );
+            println!("Found memes directory from config file: {memes_directory:?}");
             config.memes_directory = memes_directory;
         }
 
         if let Some(telegram) = file_config.telegram {
-            println!("Found telegram config from config file: {:?}", telegram);
+            println!("Found telegram config from config file: {telegram:?}");
             config.telegram = Some(telegram);
         }
     }
@@ -315,11 +315,11 @@ impl FileConfiguration {
         let config_file = fs::read_to_string(p).unwrap();
         match toml::from_str(&config_file) {
             Ok(config) => {
-                println!("Parsed config file successfully");
+                println!("Parsed config file successfully: {config:?}");
                 config
             }
             Err(e) => {
-                eprintln!("Error parsing config file: {:?}", e);
+                eprintln!("Error parsing config file: {e:?}");
                 None
             }
         }
@@ -339,14 +339,14 @@ impl FileConfiguration {
         let file = config_dir.join("meme-downloader").join("config.toml");
 
         if !file.exists() {
-            println!("Config file not found. Creating one at {:#?}", file);
+            println!("Config file not found. Creating one at {file:#?}");
             let mut f = fs::File::create(&file);
             let res: Result<_, _> = f
                 .as_mut()
                 .map(|f| f.write_all(include_bytes!("./config.toml")));
 
             if let Err(e) = res {
-                eprintln!("Failed to create config file: {}", e);
+                eprintln!("Failed to create config file: {e}");
                 bail!("Failed to create config file: {}", e);
             }
         }

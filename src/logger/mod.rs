@@ -4,7 +4,7 @@ use log4rs::{
         console::{ConsoleAppender, Target},
         file::FileAppender,
     },
-    config::{Appender, Config, Root},
+    config::{Appender, Config, Logger, Root},
     filter::threshold::ThresholdFilter,
 };
 use sanitize_filename::sanitize_with_options;
@@ -30,17 +30,21 @@ pub fn init<S: AsRef<str>>(download_url: S) {
     let stdout = ConsoleAppender::builder().target(Target::Stdout).build();
     let log = FileAppender::builder().build(&tmp_file).unwrap();
 
-    let config = Config::builder()
-        .appender(
-            Appender::builder()
-                .filter(Box::new(ThresholdFilter::new(LevelFilter::Info)))
-                .build("logfile", Box::new(log)),
-        )
-        .appender(
-            Appender::builder()
-                .filter(Box::new(ThresholdFilter::new(LevelFilter::Trace)))
-                .build("stdout", Box::new(stdout)),
-        )
+    let config = Config::builder();
+    let config = config.appender(
+        Appender::builder()
+            .filter(Box::new(ThresholdFilter::new(LevelFilter::Info)))
+            .build("logfile", Box::new(log)),
+    );
+    let config = config.appender(
+        Appender::builder()
+            .filter(Box::new(ThresholdFilter::new(LevelFilter::Trace)))
+            .build("stdout", Box::new(stdout)),
+    );
+    let config = config
+        .logger(Logger::builder().build("async_io", LevelFilter::Error))
+        .logger(Logger::builder().build("polling", LevelFilter::Error));
+    let config = config
         .build(
             Root::builder()
                 .appender("logfile")

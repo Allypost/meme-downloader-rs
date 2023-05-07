@@ -8,6 +8,8 @@ use std::env;
 use std::fs;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "telegram-bot")]
+use std::process::exit;
 
 use which::which;
 

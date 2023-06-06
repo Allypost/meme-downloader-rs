@@ -37,6 +37,7 @@ which = "4.4.0"
 
 [features]
 default = []
+all = ["desktop-notifications", "telegram-bot"]
 bots = ["telegram-bot"]
 desktop-notifications = ["dep:notify-rust"]
 telegram-bot = ["dep:tokio", "dep:teloxide", "dep:futures"]

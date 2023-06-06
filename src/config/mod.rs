@@ -3,7 +3,6 @@ use clap::Parser;
 use lazy_static::lazy_static;
 use resolve_path::PathResolveExt;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::fs;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -59,7 +58,6 @@ impl Configuration {
         let file_config = FileConfiguration::new();
 
         config.merge_file_config(&file_config);
-        config.merge_env(&args);
         config.merge_args(&args);
 
         {
@@ -95,52 +93,15 @@ impl Configuration {
 
         #[cfg(feature = "telegram-bot")]
         {
-            if args.telegram_run_as_bot && config.telegram.is_none() {
+            if args.telegram_run_as_bot == false {
+                config.telegram = None;
+            } else if config.telegram.is_none() {
                 eprintln!("Telegram bot config not set");
                 exit(1);
             }
         }
 
         config
-    }
-
-    fn merge_env(&mut self, #[allow(unused_variables)] args: &Args) -> &Self {
-        if let Ok(config_path) = env::var("MEME_DOWNLOADER_CONFIG_PATH") {
-            self.config_path = PathBuf::from(config_path);
-        }
-
-        #[cfg(feature = "telegram-bot")]
-        {
-            if args.telegram_run_as_bot {
-                if let Ok(token) = env::var("MEME_DOWNLOADER_TELEGRAM_TOKEN") {
-                    println!("Telegram bot token set from environment variable");
-                    if let Some(ref mut config) = self.telegram {
-                        config.bot_token = token;
-                    } else {
-                        self.telegram = Some(TelegramBotConfig {
-                            bot_token: token,
-                            owner_id: None,
-                        });
-                    }
-                }
-
-                if let Ok(owner_id) = env::var("MEME_DOWNLOADER_TELEGRAM_OWNER_ID") {
-                    println!("Telegram owner ID set from environment variable");
-                    match (&mut self.telegram, owner_id.parse::<u64>()) {
-                        (Some(ref mut config), Ok(owner_id)) => {
-                            config.owner_id = Some(owner_id);
-                        }
-                        (Some(_), Err(e)) => {
-                            eprintln!("Invalid Telegram owner ID: {e:?}");
-                            exit(1);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-
-        self
     }
 
     fn merge_args(&mut self, args: &Args) -> &Self {
@@ -167,24 +128,24 @@ pub struct Args {
     /// Location of the configuration file.
     /// By default shoud be in the os-appropriate config directory
     /// under the name `meme-downloader/config.toml`
-    #[arg(short='c', long, default_value = None)]
+    #[arg(short='c', long, default_value = None, env = "MEME_DOWNLOADER_CONFIG")]
     pub config_path: Option<PathBuf>,
 
     /// Path to the yt-dlp executable.
     /// If not provided, yt-dlp will be searched for in $PATH
-    #[arg(long, default_value = None)]
+    #[arg(long, default_value = None, env = "MEME_DOWNLOADER_YT_DLP")]
     pub yt_dlp_path: Option<PathBuf>,
     /// Path to the ffmpeg executable.
     /// If not provided, ffmpeg will be searched for in $PATH
-    #[arg(long, default_value = None)]
+    #[arg(long, default_value = None, env = "MEME_DOWNLOADER_FFMPEG")]
     pub ffmpeg_path: Option<PathBuf>,
     /// Path to the ffprobe executable.
     /// If not provided, ffprobe will be searched for in $PATH
-    #[arg(long, default_value = None)]
+    #[arg(long, default_value = None, env = "MEME_DOWNLOADER_FFPROBE")]
     pub ffprobe_path: Option<PathBuf>,
     /// The directory to save memes to.
     /// If not provided, `$HOME/MEMES' will be used
-    #[arg(short='d', long, default_value = None)]
+    #[arg(short='d', long, default_value = None, env = "MEME_DOWNLOADER_MEMES_DIR")]
     pub memes_directory: Option<PathBuf>,
 
     /// Run as a Telegram bot.
@@ -196,11 +157,11 @@ pub struct Args {
     pub telegram_run_as_bot: bool,
     /// The telegram bot token. <https://core.telegram.org/bots/features#botfather>
     #[cfg(feature = "telegram-bot")]
-    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "BOT_TOKEN"))]
+    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "BOT_TOKEN", env = "MEME_DOWNLOADER_TELEGRAM_TOKEN"))]
     pub telegram_bot_token: Option<String>,
     /// The Telegram user ID of the owner of the bot. Used to restrict access to the bot or allow additional commands
     #[cfg(feature = "telegram-bot")]
-    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "OWNER_ID"))]
+    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "OWNER_ID", env = "MEME_DOWNLOADER_TELEGRAM_OWNER_ID"))]
     pub telegram_owner_id: Option<u64>,
 }
 

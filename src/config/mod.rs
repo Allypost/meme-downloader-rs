@@ -93,7 +93,7 @@ impl Configuration {
 
         #[cfg(feature = "telegram-bot")]
         {
-            if args.telegram_run_as_bot == false {
+            if !args.telegram_run_as_bot {
                 config.telegram = None;
             } else if config.telegram.is_none() {
                 eprintln!("Telegram bot config not set");

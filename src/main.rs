@@ -49,7 +49,7 @@ fn main() {
                 .lock()
                 .lines()
                 .next()
-                .unwrap_or_else(|| Ok("".to_string()))
+                .unwrap_or_else(|| Ok(String::new()))
                 .unwrap_or_default();
         },
         string::ToString::to_string,

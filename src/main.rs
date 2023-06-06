@@ -39,16 +39,26 @@ fn main() {
     let download_url = CONFIGURATION.args_download_url.as_ref().map_or_else(
         || {
             if atty::isnt(atty::Stream::Stdin) {
-                error!("No download URL provided. Please provide one.");
+                println!("No download URL provided. Please provide one.");
                 exit(1);
             }
 
             print!("Download URL: ");
             io::stdout().flush().unwrap();
-            return io::stdin().lock().lines().next().unwrap().unwrap();
+            return io::stdin()
+                .lock()
+                .lines()
+                .next()
+                .unwrap_or_else(|| Ok("".to_string()))
+                .unwrap_or_default();
         },
         string::ToString::to_string,
     );
+
+    if download_url.is_empty() {
+        println!("No download URL provided. Please provide one.");
+        exit(1);
+    }
 
     logger::init(&download_url);
 

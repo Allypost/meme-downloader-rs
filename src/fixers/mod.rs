@@ -20,7 +20,7 @@ pub fn fix_files(paths: &Vec<PathBuf>) -> Result<Vec<PathBuf>, String> {
         .map(|path| {
             let mut p = path.clone();
             for filter in &fixers {
-                p = filter(path)?;
+                p = filter(&p)?;
             }
             Ok(p)
         })

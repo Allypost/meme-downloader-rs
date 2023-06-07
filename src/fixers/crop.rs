@@ -5,15 +5,14 @@ use crate::{
 };
 use log::{debug, info, trace};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use std::{
-    fmt::Display,
-    path::{Path, PathBuf},
-    process,
-};
+use std::{ffi::OsStr, fmt::Display, path::PathBuf, process};
 
 pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     info!("Auto cropping video {file_path:?}");
 
+    let file_path_str = file_path
+        .to_str()
+        .ok_or_else(|| format!("Failed to convert {file_path:?} to string"))?;
     let media_info = ffprobe::ffprobe(file_path).map_err(|e| format!("{e:?}"))?;
     let video_stream = media_info
         .streams
@@ -43,10 +42,9 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
         }
     };
 
-    let ffmpeg = &CONFIGURATION.ffmpeg_path;
     let crop_filters = vec![BorderColor::White, BorderColor::Black]
         .into_par_iter()
-        .map(|color| get_crop_filter(ffmpeg, file_path, &color))
+        .map(|color| get_crop_filter(file_path_str, &color))
         .collect::<Result<Option<Vec<_>>, String>>()?;
 
     let crop_filters = match crop_filters {
@@ -92,17 +90,24 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     }
 
     let new_filename = {
-        let file_name = file_path.file_stem().unwrap().to_str().unwrap();
-        let file_extension = file_path.extension().unwrap().to_str().unwrap();
+        let file_name = file_path
+            .file_stem()
+            .and_then(OsStr::to_str)
+            .ok_or_else(|| format!("Failed to get file stem from {file_path:?}"))?;
+
+        let file_extension = file_path
+            .extension()
+            .and_then(OsStr::to_str)
+            .ok_or_else(|| format!("Failed to get file extension from {file_path:?}"))?;
 
         file_path.with_file_name(format!("{file_name}.ac.{file_extension}"))
     };
 
-    let mut cmd = process::Command::new(ffmpeg);
+    let mut cmd = process::Command::new(&CONFIGURATION.ffmpeg_path);
     let cmd = cmd
         .arg("-y")
         .args(["-loglevel", "panic"])
-        .args(["-i", file_path.to_str().unwrap()])
+        .args(["-i", file_path_str])
         .args(["-vf", &final_crop_filter.to_string()])
         .args(["-preset", "slow"])
         .arg(&new_filename);
@@ -157,20 +162,24 @@ enum BorderColor {
 }
 
 fn get_crop_filter(
-    ffmpeg_path: &PathBuf,
-    file: &Path,
+    file_path: &str,
     border_color: &BorderColor,
 ) -> Result<Option<CropFilter>, String> {
-    let mut cmd = process::Command::new(ffmpeg_path);
+    let cropdetect_filter = "cropdetect=mode=black:limit=24:round=2:reset=0";
+
+    let mut cmd = process::Command::new(&CONFIGURATION.ffmpeg_path);
     let cmd = cmd
         .arg("-hide_banner")
-        .args(["-i", file.to_str().unwrap()])
+        .args(["-i", file_path])
         .args([
             "-vf",
-            match border_color {
-                BorderColor::White => "negate,cropdetect=24:2:0,negate",
-                BorderColor::Black => "cropdetect=24:2:0",
-            },
+            (match border_color {
+                BorderColor::White => {
+                    format!("negate,{cropdetect_filter}")
+                }
+                BorderColor::Black => cropdetect_filter.to_string(),
+            })
+            .as_str(),
         ])
         .args(["-f", "null", "-"]);
 
@@ -184,8 +193,12 @@ fn get_crop_filter(
         .split('\n')
         .filter(|s| s.starts_with("[Parsed_cropdetect") && s.contains("crop="))
         .map(str::trim)
-        .map(|s| s.split("crop=").nth(1).unwrap())
-        .collect::<Vec<_>>();
+        .map(|s| {
+            s.split("crop=")
+                .nth(1)
+                .ok_or_else(|| format!("Failed to parse cropdetect output from {s:?}"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     res.sort_unstable();
     res.dedup();
@@ -194,15 +207,20 @@ fn get_crop_filter(
         .iter()
         .map(|s| {
             let mut s = s.split(':');
+            let mut next_s = || {
+                s.next()
+                    .and_then(|x| x.to_string().parse::<i64>().ok())
+                    .ok_or_else(|| format!("Failed to parse width from {s:?}"))
+            };
 
-            CropFilter {
-                width: s.next().unwrap().to_string().parse::<i64>().unwrap(),
-                height: s.next().unwrap().to_string().parse::<i64>().unwrap(),
-                x: s.next().unwrap().to_string().parse::<i64>().unwrap(),
-                y: s.next().unwrap().to_string().parse::<i64>().unwrap(),
-            }
+            Ok(CropFilter {
+                width: next_s()?,
+                height: next_s()?,
+                x: next_s()?,
+                y: next_s()?,
+            })
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, String>>()?;
 
     Ok(get_minmax_crop_filter(res))
 }

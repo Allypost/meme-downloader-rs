@@ -4,47 +4,18 @@
 #![allow(clippy::manual_let_else)]
 
 use config::CONFIGURATION;
-use log::info;
+use log::{error, info, trace};
 use logger::LoggerConfig;
-use std::process::exit;
+use std::{fs, path::PathBuf, process::exit};
 
 #[cfg(feature = "desktop-notifications")]
 mod notif;
 
-#[cfg(feature = "telegram-bot")]
-#[tokio::main]
-async fn main() {
-    if logger::init(
-        LoggerConfig::builder()
-            .program_name("meme-downloader")
-            .name_suffix("telegram-bot")
-            .file_log_level(log::LevelFilter::Debug)
-            .stdout_log_level(if cfg!(debug_assertions) {
-                log::LevelFilter::Trace
-            } else {
-                log::LevelFilter::Info
-            }),
-    )
-    .is_err()
-    {
-        println!("Failed to initialize logger.");
-        exit(1);
-    }
-
-    if CONFIGURATION.telegram.is_none() {
-        println!("No Telegram configuration provided. Please provide one.");
-        exit(1);
-    }
-
-    bots::bot::telegram::run().await;
-    info!("Bot stopped");
-}
-
-#[cfg(not(feature = "telegram-bot"))]
 fn main() {
-    use log::{error, trace};
-    use std::fs;
-    use std::path::PathBuf;
+    #[cfg(feature = "telegram-bot")]
+    {
+        run_telegram_bot();
+    }
 
     let download_url = if let Ok(url) = get_download_url() {
         url
@@ -145,7 +116,40 @@ fn main() {
     }
 }
 
-#[cfg(not(feature = "telegram-bot"))]
+#[cfg(feature = "telegram-bot")]
+fn run_telegram_bot() {
+    if logger::init(
+        LoggerConfig::builder()
+            .program_name("meme-downloader")
+            .name_suffix("telegram-bot")
+            .file_log_level(log::LevelFilter::Debug)
+            .stdout_log_level(if cfg!(debug_assertions) {
+                log::LevelFilter::Trace
+            } else {
+                log::LevelFilter::Info
+            }),
+    )
+    .is_err()
+    {
+        println!("Failed to initialize logger.");
+        exit(1);
+    }
+
+    if CONFIGURATION.telegram.is_none() {
+        println!("No Telegram configuration provided. Please provide one.");
+        exit(1);
+    }
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(bots::bot::telegram::run());
+
+    info!("Telegram bot stopped");
+    exit(0);
+}
+
 fn get_download_url() -> anyhow::Result<String> {
     let download_url = CONFIGURATION.args_download_url.as_ref();
 

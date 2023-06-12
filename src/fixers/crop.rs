@@ -19,68 +19,42 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
         .iter()
         .find(|s| option_contains(&s.codec_type, &"video".to_string()));
 
-    let video_stream = match video_stream {
-        Some(s) => {
+    let (w, h) = {
+        let video_stream = if let Some(s) = video_stream {
             trace!("Found video stream");
             s
-        }
-        None => {
+        } else {
             info!("File does not contain a video stream, skipping");
             return Ok(file_path.into());
-        }
-    };
+        };
 
-    let (w, h) = match (video_stream.width, video_stream.height) {
-        (Some(w), Some(h)) => {
+        if let (Some(w), Some(h)) = (video_stream.width, video_stream.height) {
             trace!("Video width: {w}, height: {h}");
             (w, h)
-        }
-        _ => {
+        } else {
             return Err(format!(
                 "Failed to get video width and height for {file_path:?}"
             ));
         }
     };
 
-    let crop_filters = vec![BorderColor::White, BorderColor::Black]
-        .into_par_iter()
-        .map(|color| get_crop_filter(file_path_str, &color))
-        .collect::<Result<Option<Vec<_>>, String>>()?;
+    let crop_filters = {
+        let crop_filters = vec![BorderColor::White, BorderColor::Black]
+            .into_par_iter()
+            .filter_map(|color| get_crop_filter(file_path_str, &color).ok())
+            .collect::<Option<Vec<_>>>();
 
-    let crop_filters = match crop_filters {
-        Some(crop_filters) => {
-            trace!("Crop filters: {crop_filters:?}");
-            crop_filters
-        }
-        None => {
+        if let Some(fs) = crop_filters {
+            trace!("Crop filters: {fs:?}");
+            fs
+        } else {
             info!("No crop filters found, skipping");
             return Ok(file_path.into());
         }
     };
 
-    let mut final_crop_filter = CropFilter {
-        width: i64::MAX,
-        height: i64::MAX,
-        x: i64::MIN,
-        y: i64::MIN,
-    };
-    for crop_filter in crop_filters {
-        if crop_filter.width < final_crop_filter.width {
-            final_crop_filter.width = crop_filter.width;
-        }
-
-        if crop_filter.height < final_crop_filter.height {
-            final_crop_filter.height = crop_filter.height;
-        }
-
-        if crop_filter.x > final_crop_filter.x {
-            final_crop_filter.x = crop_filter.x;
-        }
-
-        if crop_filter.y > final_crop_filter.y {
-            final_crop_filter.y = crop_filter.y;
-        }
-    }
+    let final_crop_filter = CropFilter::intersect_all(crop_filters)
+        .ok_or_else(|| "Failed to intersect crop filters".to_string())?;
 
     debug!("Final crop filter: {final_crop_filter:?}");
 
@@ -134,12 +108,66 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     Ok(new_filename)
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 struct CropFilter {
     width: i64,
     height: i64,
     x: i64,
     y: i64,
+}
+
+impl CropFilter {
+    fn union(&mut self, other: &Self) {
+        self.width = self.width.max(other.width);
+        self.height = self.height.max(other.height);
+        self.x = self.x.min(other.x);
+        self.y = self.y.min(other.y);
+    }
+
+    fn union_all(filters: Vec<Self>) -> Option<Self> {
+        if filters.is_empty() {
+            return None;
+        }
+
+        let mut res = Self {
+            width: i64::MIN,
+            height: i64::MIN,
+            x: i64::MAX,
+            y: i64::MAX,
+        };
+
+        for filter in filters {
+            res.union(&filter);
+        }
+
+        Some(res)
+    }
+
+    fn intersect(&mut self, other: &Self) {
+        self.width = self.width.min(other.width);
+        self.height = self.height.min(other.height);
+        self.x = self.x.max(other.x);
+        self.y = self.y.max(other.y);
+    }
+
+    fn intersect_all(filters: Vec<Self>) -> Option<Self> {
+        if filters.is_empty() {
+            return None;
+        }
+
+        let mut res = Self {
+            width: i64::MAX,
+            height: i64::MAX,
+            x: i64::MIN,
+            y: i64::MIN,
+        };
+
+        for filter in filters {
+            res.intersect(&filter);
+        }
+
+        Some(res)
+    }
 }
 
 impl Display for CropFilter {
@@ -222,44 +250,5 @@ fn get_crop_filter(
         })
         .collect::<Result<Vec<_>, String>>()?;
 
-    Ok(get_minmax_crop_filter(res))
-}
-
-fn get_minmax_crop_filter(res: Vec<CropFilter>) -> Option<CropFilter> {
-    trace!("get_minmax_crop_filter({res:?})");
-
-    if res.is_empty() {
-        return None;
-    }
-
-    let mut min_x = i64::MAX;
-    let mut min_y = i64::MAX;
-    let mut max_w = i64::MIN;
-    let mut max_h = i64::MIN;
-    for filter in res {
-        let x = filter.x;
-        let y = filter.y;
-        let w = filter.width;
-        let h = filter.height;
-
-        if x < min_x {
-            min_x = x;
-        }
-        if y < min_y {
-            min_y = y;
-        }
-        if w > max_w {
-            max_w = w;
-        }
-        if h > max_h {
-            max_h = h;
-        }
-    }
-
-    Some(CropFilter {
-        width: max_w,
-        height: max_h,
-        x: min_x,
-        y: min_y,
-    })
+    Ok(CropFilter::union_all(res))
 }

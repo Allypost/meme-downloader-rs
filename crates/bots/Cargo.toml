@@ -1,0 +1,21 @@
+[package]
+name = "bots"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+config = { version = "*", path = "../config" }
+downloader = { version = "*", path = "../downloader" }
+futures = "0.3.28"
+helpers = { version = "*", path = "../helpers" }
+infer = "0.13.0"
+log = "0.4.19"
+rayon = "1.7.0"
+teloxide = { optional = true, version = "0.12.2", default-features = false, features = [
+  "macros",
+  "rustls",
+] }
+tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread"] }
+
+[features]
+telegram = ["config/telegram-bot", "dep:teloxide"]

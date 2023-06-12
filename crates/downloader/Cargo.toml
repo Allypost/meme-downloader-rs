@@ -1,0 +1,22 @@
+[package]
+name = "downloader"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+fixers = { version = "0.3.0", path = "../fixers" }
+log = "0.4.19"
+once_cell = "1.18.0"
+rayon = "1.7.0"
+regex = "1.8.4"
+serde = { version = "1.0.164", features = ["derive", "alloc"] }
+serde_json = { version = "1.0.96", features = ["alloc", "preserve_order"] }
+reqwest = { version = "0.11.14", default-features = false, features = [
+  "blocking",
+  "json",
+  "deflate",
+  "rustls-tls",
+] }
+url = "2.4.0"
+config = { version = "0.3.0", path = "../config" }
+helpers = { version = "0.3.0", path = "../helpers" }

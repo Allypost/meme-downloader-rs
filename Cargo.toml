@@ -1,49 +1,15 @@
-[package]
-name = "meme-download"
-version = "0.1.0"
+[workspace]
+members = ["crates/*"]
+default-members = ["crates/app"]
+
+[workspace.package]
+version = "0.4.0"
+authors = ["Allypost"]
+description = "A meme downloader"
 edition = "2021"
-resolver = "2"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-anyhow = "1.0.71"
-atty = "0.2.14"
-base64 = "0.21.0"
-clap = { version = "4.1.8", features = ["derive", "env"] }
-dirs = "4.0.0"
-filetime = "0.2.20"
-fs_extra = "1.3.0"
-futures = { optional = true, version = "0.3.27"}
-infer = "0.13.0"
-lazy_static = "1.4.0"
-log = "0.4.17"
-log4rs = "1.2.0"
-notify-rust = { optional = true, version = "4.8.0"}
-once_cell = "1.17.1"
-rayon = "1.7.0"
-regex = "1.7.1"
-reqwest = { version = "0.11.14", default-features = false, features = ["blocking", "json", "deflate", "rustls-tls"] }
-resolve-path = "0.1.0"
-sanitize-filename = "0.4.0"
-serde = { version = "1.0.153", features = ["derive"] }
-serde_json = "1.0.94"
-teloxide = { optional = true, version = "0.12.2", default-features = false, features = ["macros", "rustls"] }
-tokio = { optional = true, version = "1.26.0", features = ["macros", "rt-multi-thread"] }
-toml = "0.7.2"
-trash = "3.0.1"
-url = "2.3.1"
-which = "4.4.0"
-
-[features]
-default = []
-all = ["desktop-notifications", "telegram-bot"]
-bots = ["telegram-bot"]
-desktop-notifications = ["dep:notify-rust"]
-telegram-bot = ["dep:tokio", "dep:teloxide", "dep:futures"]
 
 [profile.release]
 strip = true
-opt-level = "z"
-lto = true
-codegen-units = 1
+# opt-level = "z"
+# lto = true
+# codegen-units = 1

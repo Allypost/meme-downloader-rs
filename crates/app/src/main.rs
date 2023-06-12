@@ -1,0 +1,180 @@
+#![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::single_match_else)]
+#![allow(clippy::manual_let_else)]
+
+use config::CONFIGURATION;
+use log::info;
+use logger::LoggerConfig;
+use std::process::exit;
+
+#[cfg(feature = "desktop-notifications")]
+mod notif;
+
+#[cfg(feature = "telegram-bot")]
+#[tokio::main]
+async fn main() {
+    if logger::init(
+        LoggerConfig::builder()
+            .program_name("meme-downloader")
+            .name_suffix("telegram-bot")
+            .file_log_level(log::LevelFilter::Debug)
+            .stdout_log_level(if cfg!(debug_assertions) {
+                log::LevelFilter::Trace
+            } else {
+                log::LevelFilter::Info
+            }),
+    )
+    .is_err()
+    {
+        println!("Failed to initialize logger.");
+        exit(1);
+    }
+
+    if CONFIGURATION.telegram.is_none() {
+        println!("No Telegram configuration provided. Please provide one.");
+        exit(1);
+    }
+
+    bots::bot::telegram::run().await;
+    info!("Bot stopped");
+}
+
+#[cfg(not(feature = "telegram-bot"))]
+fn main() {
+    use log::{error, trace};
+    use std::fs;
+    use std::path::PathBuf;
+
+    let download_url = if let Ok(url) = get_download_url() {
+        url
+    } else {
+        println!("Failed to get download URL.");
+        exit(1);
+    };
+
+    if download_url.is_empty() {
+        println!("No download URL provided. Please provide one.");
+        exit(1);
+    }
+
+    if logger::init(
+        LoggerConfig::builder()
+            .program_name("meme-downloader")
+            .name_suffix(&download_url),
+    )
+    .is_err()
+    {
+        println!("Failed to initialize logger.");
+        exit(1);
+    }
+
+    trace!("Config: {:?}", *config::CONFIGURATION);
+
+    if CONFIGURATION.args_fix {
+        let file_path = PathBuf::from(&download_url);
+
+        info!("Fixing file: {:?}", &file_path);
+
+        fixers::fix_files(&vec![file_path]).unwrap_or_else(|e| {
+            error!("Error fixing file: {:?}", e);
+            exit(1);
+        });
+
+        return;
+    }
+
+    let meme_dir = CONFIGURATION.memes_directory.clone();
+    if !meme_dir.exists() {
+        info!("Memes directory does not exist. Creating...");
+        fs::create_dir_all(&meme_dir).unwrap_or_else(|e| {
+            error!("Error creating memes directory: {:?}", e);
+            exit(1);
+        });
+    }
+    trace!("Meme dir: {meme_dir:?}");
+
+    match downloader::download_file(&download_url, &meme_dir) {
+        Ok(paths) => {
+            info!(
+                "Downloaded file(s): {}",
+                paths
+                    .iter()
+                    .map(|x| { return x.to_str().unwrap() })
+                    .collect::<Vec<&str>>()
+                    .join(", ")
+            );
+
+            #[cfg(feature = "desktop-notifications")]
+            {
+                let notif = notif::send_notification(&notif::NotificationInfo {
+                    urgency: notify_rust::Urgency::Low,
+                    timeout: notify_rust::Timeout::Milliseconds(5000),
+                    icon: "success".to_string(),
+                    title: "Download finished".to_string(),
+                    message: format!("The meme from {} has finished downloading", &download_url),
+                });
+
+                if let Err(e) = notif {
+                    error!("Error sending notification: {}", e);
+                }
+            }
+        }
+        Err(e) => {
+            error!("Error downloading file: {}", e);
+
+            #[cfg(feature = "desktop-notifications")]
+            {
+                let notif = notif::send_notification(&notif::NotificationInfo {
+                    urgency: notify_rust::Urgency::Normal,
+                    timeout: notify_rust::Timeout::Milliseconds(10_000),
+                    icon: "error".to_string(),
+                    title: "Download failed".to_string(),
+                    message: format!(
+                        "The meme downloader couldn't download the provided page: {}",
+                        &download_url
+                    ),
+                });
+
+                if let Err(e) = notif {
+                    error!("Error sending notification: {}", e);
+                }
+            }
+            exit(1);
+        }
+    }
+}
+
+#[cfg(not(feature = "telegram-bot"))]
+fn get_download_url() -> anyhow::Result<String> {
+    let download_url = CONFIGURATION.args_download_url.as_ref();
+
+    if cfg!(feature = "ask-for-url") {
+        use std::io;
+        use std::io::prelude::*;
+
+        if let Some(download_url) = download_url {
+            return Ok(download_url.to_string());
+        }
+
+        if atty::isnt(atty::Stream::Stdin) {
+            anyhow::bail!("No download URL provided. Please provide one.");
+        }
+
+        print!("Download URL: ");
+        io::stdout().flush()?;
+
+        let res = io::stdin()
+            .lock()
+            .lines()
+            .next()
+            .unwrap_or_else(|| Ok(String::new()))
+            .unwrap_or_default();
+
+        Ok(res)
+    } else {
+        download_url
+            .ok_or_else(|| anyhow::anyhow!("No download URL provided. Please provide one."))
+            .map(std::string::ToString::to_string)
+    }
+}

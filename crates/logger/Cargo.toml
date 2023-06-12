@@ -1,0 +1,10 @@
+[package]
+name = "logger"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.71"
+log = "0.4.19"
+log4rs = "1.2.0"
+sanitize-filename = "0.4.0"

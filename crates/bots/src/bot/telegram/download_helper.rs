@@ -1,5 +1,7 @@
 use config::CONFIGURATION;
+use directories::ProjectDirs;
 use helpers::id::time_id;
+use log::trace;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{env, fs, path::PathBuf};
 
@@ -44,16 +46,20 @@ impl DownloadResult {
 
 pub fn temp_dir() -> Result<PathBuf, String> {
     let id = time_id().map_err(|e| format!("Error while getting time: {e:?}"))?;
-    let tmp_dir = env::temp_dir().join("telegram_bot").join(id);
+    let temp_dir = ProjectDirs::from("net", "allypost", "meme-downloader")
+        .map(|x| PathBuf::from(x.cache_dir()));
+    let temp_dir = temp_dir.unwrap_or_else(|| env::temp_dir().join("telegram_bot"));
+    let temp_dir = temp_dir.join(id);
 
-    fs::create_dir_all(&tmp_dir)
+    fs::create_dir_all(&temp_dir)
         .map_err(|e| format!("Error while creating download dir: {e:?}"))?;
 
-    Ok(tmp_dir)
+    Ok(temp_dir)
 }
 
 pub fn download_tmp_file(url: &str) -> Result<DownloadResult, String> {
     let download_dir = temp_dir()?;
+    trace!("Downloading to temp dir: {:#?}", &download_dir);
     let files = downloader::download_file(url, &download_dir)?;
 
     Ok(DownloadResult {

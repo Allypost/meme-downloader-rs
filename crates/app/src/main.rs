@@ -3,7 +3,7 @@
 #![allow(clippy::single_match_else)]
 #![allow(clippy::manual_let_else)]
 
-use config::CONFIGURATION;
+use config::{APPLICATION_NAME, CONFIGURATION};
 use log::{error, info, trace};
 use logger::LoggerConfig;
 use std::{fs, path::PathBuf, process::exit};
@@ -31,7 +31,7 @@ fn main() {
 
     if logger::init(
         LoggerConfig::builder()
-            .program_name("meme-downloader")
+            .program_name(APPLICATION_NAME)
             .name_suffix(&download_url),
     )
     .is_err()
@@ -120,7 +120,7 @@ fn main() {
 fn run_telegram_bot() {
     if logger::init(
         LoggerConfig::builder()
-            .program_name("meme-downloader")
+            .program_name(APPLICATION_NAME)
             .name_suffix("telegram-bot")
             .file_log_level(log::LevelFilter::Debug)
             .stdout_log_level(if cfg!(debug_assertions) {

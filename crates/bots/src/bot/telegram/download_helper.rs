@@ -1,9 +1,8 @@
 use config::CONFIGURATION;
-use directories::ProjectDirs;
 use helpers::id::time_id;
 use log::trace;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct DownloadResult {
@@ -46,10 +45,7 @@ impl DownloadResult {
 
 pub fn temp_dir() -> Result<PathBuf, String> {
     let id = time_id().map_err(|e| format!("Error while getting time: {e:?}"))?;
-    let temp_dir = ProjectDirs::from("net", "allypost", "meme-downloader")
-        .map(|x| PathBuf::from(x.cache_dir()));
-    let temp_dir = temp_dir.unwrap_or_else(|| env::temp_dir().join("telegram_bot"));
-    let temp_dir = temp_dir.join(id);
+    let temp_dir = CONFIGURATION.cache_dir().join("downloads").join(id);
 
     fs::create_dir_all(&temp_dir)
         .map_err(|e| format!("Error while creating download dir: {e:?}"))?;

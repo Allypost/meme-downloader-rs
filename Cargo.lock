@@ -299,7 +299,6 @@ name = "bots"
 version = "0.3.0"
 dependencies = [
  "config",
- "directories",
  "downloader",
  "futures",
  "helpers",
@@ -441,7 +440,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "clap",
- "dirs 5.0.1",
+ "directories",
  "lazy_static",
  "resolve-path",
  "serde",
@@ -629,15 +628,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
 dependencies = [
  "dirs-sys 0.3.7",
-]
-
-[[package]]
-name = "dirs"
-version = "5.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44c45a9d03d6676652bcb5e724c7e988de1acad23a711b5217ab9cbecbec2225"
-dependencies = [
- "dirs-sys 0.4.1",
 ]
 
 [[package]]
@@ -2000,7 +1990,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "321e5e41b3b192dab6f1e75b9deacb6688b4b8c5e68906a78e8f43e7c2887bb5"
 dependencies = [
- "dirs 4.0.0",
+ "dirs",
 ]
 
 [[package]]

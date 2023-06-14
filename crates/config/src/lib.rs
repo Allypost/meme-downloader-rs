@@ -5,15 +5,20 @@
 
 use anyhow::{anyhow, bail};
 use clap::Parser;
+use directories::ProjectDirs;
 use lazy_static::lazy_static;
 use resolve_path::PathResolveExt;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 #[cfg(feature = "telegram-bot")]
 use std::process::exit;
+use std::{env, fs};
 use which::which;
+
+pub static APPLICATION_NAME: &str = "meme-downloader";
+pub static ORGANIZATION_NAME: &str = "allypost";
+pub static ORGANIZATION_QUALIFIER: &str = "net";
 
 lazy_static! {
     pub static ref CONFIGURATION: Configuration = Configuration::new();
@@ -57,6 +62,33 @@ pub struct Configuration {
 }
 
 impl Configuration {
+    fn get_project_dir() -> Option<ProjectDirs> {
+        ProjectDirs::from(ORGANIZATION_QUALIFIER, ORGANIZATION_NAME, APPLICATION_NAME)
+    }
+
+    #[must_use]
+    pub fn get_config_dir() -> Option<PathBuf> {
+        Self::get_project_dir().map(|x| x.config_dir().into())
+    }
+
+    #[must_use]
+    pub fn config_dir(&self) -> Option<PathBuf> {
+        Self::get_config_dir()
+    }
+
+    #[must_use]
+    pub fn get_cache_dir() -> PathBuf {
+        Self::get_project_dir().map_or_else(
+            || env::temp_dir().join(APPLICATION_NAME),
+            |x| x.cache_dir().into(),
+        )
+    }
+
+    #[must_use]
+    pub fn cache_dir(&self) -> PathBuf {
+        Self::get_cache_dir()
+    }
+
     fn new() -> Self {
         let mut config = Self::default();
         let args = Args::parse();
@@ -91,7 +123,10 @@ impl Configuration {
 
         {
             if config.memes_directory.as_os_str().is_empty() {
-                config.memes_directory = dirs::home_dir().unwrap().join("MEMES");
+                config.memes_directory = directories::UserDirs::new()
+                    .unwrap()
+                    .home_dir()
+                    .join("MEMES");
             }
             config.memes_directory = config.memes_directory.try_resolve().unwrap().into();
         }
@@ -292,17 +327,25 @@ impl FileConfiguration {
     }
 
     fn create_default_config_file() -> anyhow::Result<PathBuf> {
-        let config_dir: PathBuf = dirs::config_dir().ok_or_else(|| {
+        let file = Self::default_config_path().ok_or_else(|| {
             anyhow!(
                 "Failed to get config directory. \
                 Please set the MEME_DOWNLOADER_CONFIG_DIR environment variable to a valid directory"
             )
         })?;
+
+        let config_dir: PathBuf = file
+            .parent()
+            .ok_or_else(|| {
+                anyhow!(
+                    "Failed to get parent directory of config file. Is the config file in root?"
+                )
+            })?
+            .into();
+
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir)?;
         }
-
-        let file = config_dir.join("meme-downloader").join("config.toml");
 
         if !file.exists() {
             println!("Config file not found. Creating one at {file:#?}");
@@ -320,10 +363,8 @@ impl FileConfiguration {
         Ok(file)
     }
 
-    fn default_config_path() -> PathBuf {
-        let config_dir = dirs::config_dir().unwrap();
-
-        config_dir.join("meme-downloader").join("config.toml")
+    fn default_config_path() -> Option<PathBuf> {
+        Configuration::get_config_dir().map(|x| x.join("config.toml"))
     }
 
     fn is_default_config_path<P>(path: P) -> bool
@@ -332,6 +373,6 @@ impl FileConfiguration {
     {
         let p = path.as_ref().as_os_str();
 
-        p.is_empty() || p == Self::default_config_path().as_os_str()
+        p.is_empty() || p == Self::default_config_path().unwrap().as_os_str()
     }
 }

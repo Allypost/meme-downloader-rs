@@ -1,5 +1,5 @@
 use config::CONFIGURATION;
-use helpers::id::time_id;
+use helpers::dirs::create_temp_dir;
 use log::trace;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{fs, path::PathBuf};
@@ -43,18 +43,9 @@ impl DownloadResult {
     }
 }
 
-pub fn temp_dir() -> Result<PathBuf, String> {
-    let id = time_id().map_err(|e| format!("Error while getting time: {e:?}"))?;
-    let temp_dir = CONFIGURATION.cache_dir().join("downloads").join(id);
-
-    fs::create_dir_all(&temp_dir)
-        .map_err(|e| format!("Error while creating download dir: {e:?}"))?;
-
-    Ok(temp_dir)
-}
-
 pub fn download_tmp_file(url: &str) -> Result<DownloadResult, String> {
-    let download_dir = temp_dir()?;
+    let download_dir =
+        create_temp_dir().map_err(|e| format!("Error while getting temp dir: {e:?}"))?;
     trace!("Downloading to temp dir: {:#?}", &download_dir);
     let files = downloader::download_file(url, &download_dir)?;
 

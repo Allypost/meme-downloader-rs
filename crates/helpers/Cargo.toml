@@ -4,6 +4,7 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.71"
 base64 = "0.21.2"
 config = { version = "*", path = "../config" }
 log = "0.4.19"

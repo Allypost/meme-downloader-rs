@@ -36,16 +36,6 @@ pub struct TelegramBotConfig {
     pub owner_id: Option<u64>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-pub struct Config {
-    yt_dlp_path: Option<PathBuf>,
-    ffmpeg_path: Option<PathBuf>,
-    ffprobe_path: Option<PathBuf>,
-    memes_directory: Option<PathBuf>,
-
-    pub telegram: Option<TelegramBotConfig>,
-}
-
 #[derive(Debug, Default)]
 pub struct Configuration {
     pub args_download_url: Option<String>,

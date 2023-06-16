@@ -14,7 +14,9 @@ mod notif;
 fn main() {
     #[cfg(feature = "telegram-bot")]
     {
-        run_telegram_bot();
+        if CONFIGURATION.telegram.is_some() {
+            run_telegram_bot();
+        }
     }
 
     let download_url = if let Ok(url) = get_download_url() {

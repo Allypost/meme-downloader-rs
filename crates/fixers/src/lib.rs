@@ -10,6 +10,7 @@ use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 pub mod crop;
 pub mod file_extensions;
 pub mod file_name;
+pub mod split_scenes;
 pub mod video_formats;
 
 pub fn fix_files(paths: &Vec<PathBuf>) -> Result<Vec<PathBuf>, String> {

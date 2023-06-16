@@ -45,6 +45,7 @@ pub struct Configuration {
     pub yt_dlp_path: PathBuf,
     pub ffmpeg_path: PathBuf,
     pub ffprobe_path: PathBuf,
+    pub scenedetect_path: Option<PathBuf>,
 
     pub memes_directory: PathBuf,
 
@@ -112,6 +113,16 @@ impl Configuration {
         }
 
         {
+            if let Some(scenedetect_path) = &config.scenedetect_path {
+                if scenedetect_path.as_os_str().is_empty() {
+                    config.scenedetect_path = which("scenedetect").ok();
+                }
+            } else {
+                config.scenedetect_path = which("scenedetect").ok();
+            }
+        }
+
+        {
             if config.memes_directory.as_os_str().is_empty() {
                 config.memes_directory = directories::UserDirs::new()
                     .unwrap()
@@ -173,6 +184,11 @@ pub struct Args {
     /// If not provided, ffprobe will be searched for in $PATH
     #[arg(long, default_value = None, env = "MEME_DOWNLOADER_FFPROBE")]
     pub ffprobe_path: Option<PathBuf>,
+    /// Path to the scenedetect executable.
+    /// If not provided, scenedetect will be searched for in $PATH
+    #[arg(long, default_value = None, env = "MEME_DOWNLOADER_SCENEDETECT")]
+    pub scenedetect_path: Option<PathBuf>,
+
     /// The directory to save memes to.
     /// If not provided, `$HOME/MEMES' will be used
     #[arg(short='d', long, default_value = None, env = "MEME_DOWNLOADER_MEMES_DIR")]
@@ -246,6 +262,10 @@ pub struct FileConfiguration {
     /// If not provided, ffprobe will be searched for in $PATH
     pub ffprobe_path: Option<PathBuf>,
 
+    /// Path to the scenedetect executable
+    /// If not provided, scenedetect will be searched for in $PATH
+    pub scenedetect_path: Option<PathBuf>,
+
     /// The directory to save memes to.
     /// If not provided, $HOME/MEMES will be used
     pub memes_directory: Option<PathBuf>,
@@ -279,6 +299,11 @@ impl FileConfiguration {
         if let Some(ffprobe_path) = file_config.ffprobe_path {
             println!("Found ffprobe path from config file: {ffprobe_path:?}");
             config.ffprobe_path = ffprobe_path;
+        }
+
+        if let Some(scenedetect_path) = file_config.scenedetect_path {
+            println!("Found scenedetect path from config file: {scenedetect_path:?}");
+            config.scenedetect_path = Some(scenedetect_path);
         }
 
         if let Some(memes_directory) = file_config.memes_directory {

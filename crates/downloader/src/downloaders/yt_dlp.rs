@@ -5,10 +5,10 @@ use helpers::id::time_id;
 use log::{debug, info};
 use std::{path::PathBuf, process};
 
-pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
+pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let yt_dlp = &CONFIGURATION.yt_dlp_path;
     debug!("`yt-dlp' binary: {:#?}", &yt_dlp);
-    let output_template = get_output_template(meme_dir);
+    let output_template = get_output_template(download_dir);
     debug!("template: {:#?}", &output_template);
     let mut cmd = process::Command::new(yt_dlp);
     let cmd = cmd
@@ -56,9 +56,9 @@ pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
     Ok(vec![new_file_path])
 }
 
-fn get_output_template<S: Into<PathBuf>>(meme_dir: S) -> PathBuf {
+fn get_output_template<S: Into<PathBuf>>(download_dir: S) -> PathBuf {
     let file_identifier = time_id().unwrap();
     let file_name = format!("{file_identifier}.%(id).64s.%(ext)s");
 
-    meme_dir.into().join(file_name)
+    download_dir.into().join(file_name)
 }

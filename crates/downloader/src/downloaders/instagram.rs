@@ -9,13 +9,13 @@ use std::{path::PathBuf, result::Result, string};
 pub static URL_MATCH: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^https?://(www\.)?instagram.com/p/(?P<post_id>[^/?]+)").unwrap());
 
-pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
+pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let instagram_urls = fetch_instagram_urls(url)?;
     debug!("Instagram URLs: {:?}", &instagram_urls);
 
     let res: Vec<Result<Vec<PathBuf>, String>> = instagram_urls
         .par_iter()
-        .map(|url| yt_dlp::download(meme_dir, url))
+        .map(|url| yt_dlp::download(download_dir, url))
         .collect();
 
     if res.iter().any(Result::is_err) {

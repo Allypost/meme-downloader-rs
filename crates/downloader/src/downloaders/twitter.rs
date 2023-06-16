@@ -15,17 +15,17 @@ pub static MEDIA_URL_MATCH: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^https?://pbs\.twimg\.com/media/").unwrap()
 });
 
-pub fn download(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
+pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     debug!("Trying to download tweet media from: {:?}", &url);
 
-    yt_dlp::download(meme_dir, url).or_else(|_e| {
+    yt_dlp::download(download_dir, url).or_else(|_e| {
         info!("Failed to download with yt-dlp. Trying to screenshot...");
 
-        screenshot_tweet(meme_dir, url)
+        screenshot_tweet(download_dir, url)
     })
 }
 
-pub fn download_media_url(meme_dir: &PathBuf, twitter_media_url: &str) -> DownloaderReturn {
+pub fn download_media_url(download_dir: &PathBuf, twitter_media_url: &str) -> DownloaderReturn {
     let mut parsed = url::Url::parse(twitter_media_url)
         .map_err(|x| format!("Failed to parse twitter media URL: {x:?}"))?;
 
@@ -41,15 +41,15 @@ pub fn download_media_url(meme_dir: &PathBuf, twitter_media_url: &str) -> Downlo
         parsed.as_str()
     };
 
-    yt_dlp::download(meme_dir, url_without_name)
+    yt_dlp::download(download_dir, url_without_name)
 }
 
-fn screenshot_tweet(meme_dir: &PathBuf, url: &str) -> DownloaderReturn {
+fn screenshot_tweet(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     debug!("Trying to screenshot tweet: {:?}", &url);
 
     let tweet_screenshot_url = format!("https://twitter.igr.ec/{url}");
 
     trace!("Tweet screenshot URL: {:?}", &tweet_screenshot_url);
 
-    yt_dlp::download(meme_dir, &tweet_screenshot_url)
+    yt_dlp::download(download_dir, &tweet_screenshot_url)
 }

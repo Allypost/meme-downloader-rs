@@ -4,13 +4,17 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.71"
+async-recursion = "1.0.4"
 config = { version = "*", path = "../config" }
 downloader = { version = "*", path = "../downloader" }
+fixers = { version = "0.3.0", path = "../fixers" }
 futures = "0.3.28"
 helpers = { version = "*", path = "../helpers" }
 infer = "0.13.0"
 log = "0.4.19"
 rayon = "1.7.0"
+scopeguard = "1.1.0"
 teloxide = { optional = true, version = "0.12.2", default-features = false, features = [
   "macros",
   "rustls",

@@ -2,11 +2,25 @@ use crate::bot::telegram::handlers::message::MessageHandler;
 use config::CONFIGURATION;
 use log::{debug, error, info, trace};
 use std::{process::exit, thread};
-use teloxide::prelude::*;
+use teloxide::{prelude::*, types::Me, utils::command::BotCommands};
 use tokio::runtime;
 
 mod download_helper;
 mod handlers;
+
+#[derive(Debug, BotCommands)]
+#[command(
+    rename_rule = "camelCase",
+    description = "These commands are supported:"
+)]
+enum Command {
+    #[command(description = "Display this help message")]
+    Help,
+    #[command(
+        description = "Split the video into scenes (best effort). Must be a reply to a video message or text of a video message."
+    )]
+    SplitScenes,
+}
 
 pub async fn run() {
     let bot_token: &str = match CONFIGURATION
@@ -46,12 +60,12 @@ pub async fn run() {
 }
 
 async fn run_listener(bot: Bot) {
-    let handler = Update::filter_message().endpoint(|bot: Bot, msg: Message| async move {
+    let handler = Update::filter_message().endpoint(|bot: Bot, msg: Message, me: Me| async move {
         trace!("Received message: {msg:?}");
         thread::spawn(move || {
             trace!("Spawned new thread for message handler");
 
-            let msg_handler = MessageHandler::new(bot.clone(), msg.clone());
+            let msg_handler = MessageHandler::new(&bot, &me, &msg);
 
             let runtime = runtime::Builder::new_current_thread()
                 .enable_all()
@@ -89,5 +103,10 @@ async fn run_listener(bot: Bot) {
         respond(())
     });
 
-    Dispatcher::builder(bot, handler).build().dispatch().await;
+    let handler_tree = dptree::entry().branch(handler);
+
+    Dispatcher::builder(bot, handler_tree)
+        .build()
+        .dispatch()
+        .await;
 }

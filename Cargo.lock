@@ -298,13 +298,17 @@ dependencies = [
 name = "bots"
 version = "0.3.0"
 dependencies = [
+ "anyhow",
+ "async-recursion",
  "config",
  "downloader",
+ "fixers",
  "futures",
  "helpers",
  "infer",
  "log",
  "rayon",
+ "scopeguard",
  "teloxide",
  "tokio",
 ]

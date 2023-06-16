@@ -1,27 +1,42 @@
-use std::path::{Path, PathBuf};
-
-use crate::bot::telegram::download_helper::{self, DownloadResult};
-use config::CONFIGURATION;
-use futures;
-use helpers::results::option_contains;
-use log::{info, trace};
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-use teloxide::{
-    prelude::*,
-    types::{
-        InputFile, InputMedia, InputMediaPhoto, InputMediaVideo, MediaKind, MediaPhoto, MediaText,
-        MediaVideo, MessageCommon, MessageEntityKind, MessageKind,
-    },
+use std::{
+    fs,
+    path::{Path, PathBuf},
 };
 
-pub struct MessageHandler {
-    bot: Bot,
-    msg: Message,
+use crate::bot::telegram::{
+    download_helper::{self, DownloadResult},
+    Command,
+};
+use anyhow::anyhow;
+use async_recursion::async_recursion;
+use config::CONFIGURATION;
+use futures::{self};
+use helpers::{dirs::create_temp_dir, results::option_contains};
+use log::{debug, error, info, trace};
+use rayon::{
+    prelude::{IntoParallelRefIterator, ParallelIterator},
+    slice::ParallelSlice,
+};
+use teloxide::{
+    net::Download,
+    prelude::*,
+    types::{
+        InputFile, InputMedia, InputMediaPhoto, InputMediaVideo, Me, MediaAnimation, MediaKind,
+        MediaPhoto, MediaText, MediaVideo, MessageCommon, MessageEntityKind, MessageKind,
+    },
+    utils::command::BotCommands,
+};
+use tokio::fs::File;
+
+pub struct MessageHandler<'a> {
+    bot: &'a Bot,
+    me: &'a Me,
+    msg: &'a Message,
     is_owner: bool,
 }
 
-impl MessageHandler {
-    pub fn new(bot: Bot, msg: Message) -> Self {
+impl<'a> MessageHandler<'a> {
+    pub fn new(bot: &'a Bot, me: &'a Me, msg: &'a Message) -> Self {
         let owner_id = CONFIGURATION
             .telegram
             .as_ref()
@@ -31,12 +46,40 @@ impl MessageHandler {
             .from()
             .map_or(false, |sender| option_contains(&owner_id, &sender.id.0));
 
-        Self { bot, msg, is_owner }
+        Self {
+            bot,
+            me,
+            msg,
+            is_owner,
+        }
     }
 
     pub async fn handle(&self) -> Result<(), String> {
         let msg = &self.msg;
         trace!("Handling message: {id:?}", id = msg.id);
+
+        let parsed_cmd = msg.text().or_else(|| msg.caption()).map(|text| {
+            let cmd: Result<Command, teloxide::utils::command::ParseError> =
+                BotCommands::parse(text, self.me.username());
+
+            cmd
+        });
+
+        match parsed_cmd {
+            Some(Ok(Command::SplitScenes)) => {
+                debug!("Got command: {cmd:?}", cmd = parsed_cmd);
+                self.handle_split_cmd(msg).await?;
+                return Ok(());
+            }
+            Some(Ok(Command::Help)) => {
+                debug!("Got command: {cmd:?}", cmd = parsed_cmd);
+                self.send_reply(Command::descriptions().to_string().as_str())
+                    .await?;
+                return Ok(());
+            }
+            None | Some(Err(_)) => {}
+        }
+
         match &msg.kind {
             MessageKind::Common(MessageCommon { media_kind, .. }) => {
                 self.handle_media_kind(media_kind).await?;
@@ -64,6 +107,44 @@ impl MessageHandler {
             .map_err(|e| format!("Error while editing message: {e:?}"))
     }
 
+    #[async_recursion]
+    async fn handle_split_cmd(&self, msg: &Message) -> Result<(), String> {
+        trace!("Handling split command for message {id:?}", id = msg.id);
+
+        if let MessageKind::Common(MessageCommon {
+            reply_to_message,
+            media_kind,
+            ..
+        }) = &msg.kind
+        {
+            let file_id = match &media_kind {
+                MediaKind::Video(MediaVideo { video, .. }) => {
+                    trace!("Got video: {video:#?}");
+                    Some(&video.file.id)
+                }
+
+                MediaKind::Animation(MediaAnimation { animation, .. }) => {
+                    trace!("Got animation: {animation:#?}");
+                    Some(&animation.file.id)
+                }
+
+                _ => None,
+            };
+            if let Some(file_id) = file_id {
+                return split_msg_video(self, file_id)
+                    .await
+                    .map_err(|e| format!("Error while splitting video into scenes: {e:?}"));
+            }
+
+            if let Some(reply_to_message) = reply_to_message {
+                return self.handle_split_cmd(reply_to_message).await;
+            }
+        }
+
+        self.send_reply("Must be either a reply to a video message or be the text of a message containing video").await?;
+        Ok(())
+    }
+
     async fn handle_media_kind(&self, kind: &MediaKind) -> Result<(), String> {
         match kind {
             MediaKind::Text(MediaText { text, entities, .. }) => {
@@ -80,6 +161,7 @@ impl MessageHandler {
                     .collect::<Vec<_>>();
 
                 if urls.is_empty() {
+                    self.send_reply("No URLs found in message").await?;
                     return Ok(());
                 }
 
@@ -158,6 +240,102 @@ impl MessageHandler {
             _ => Err("Unknown media kind".to_string()),
         }
     }
+}
+
+async fn split_msg_video(
+    handler: &MessageHandler<'_>,
+    telegram_file_id: &str,
+) -> anyhow::Result<()> {
+    let status_msg = handler
+        .send_reply("Splitting video...")
+        .await
+        .map_err(|e| anyhow!(e))?;
+
+    let f = handler.bot.get_file(telegram_file_id).await?;
+    trace!("Got file: {:#?}", f);
+
+    let download_dir = create_temp_dir()?;
+    defer! {
+        if let Err(e) = fs::remove_dir_all(&download_dir) {
+            error!("Error while removing temp dir: {e:?}");
+        }
+    }
+
+    let download_file_path = download_dir.join(format!("1.{}", f.meta.unique_id));
+    let _downloaded_file = {
+        let mut file = File::create(&download_file_path).await?;
+        handler.bot.download_file(&f.path, &mut file).await?;
+        trace!("Downloaded file: {:?}", file);
+
+        file
+    };
+    let downloaded_file_path = download_file_path.clone();
+
+    let scene_files = {
+        let download_dir = download_dir.clone();
+
+        let mut scene_files = tokio::task::spawn_blocking(move || {
+            fixers::split_scenes::split_into_scenes(
+                fixers::split_scenes::SplitVideoConfig::new(&download_dir, &download_file_path)
+                    .with_file_template("0.$SCENE_NUMBER.$START_FRAME-$END_FRAME"),
+            )
+        })
+        .await?
+        .map_err(|e| anyhow!("Error while splitting video into scenes:\n\n{e:?}", e = e))?;
+
+        scene_files.sort_unstable();
+
+        scene_files
+            .into_iter()
+            .filter(|x| x.as_os_str() != downloaded_file_path.as_os_str())
+            .collect::<Vec<_>>()
+    };
+
+    handler
+        .edit_message(&status_msg, "Split video. Uploading here...")
+        .await
+        .map_err(|e| anyhow!(e))?;
+
+    let reqs = send_files(handler, &scene_files).await?;
+
+    trace!("Uploaded files: {reqs:#?}", reqs = reqs);
+
+    handler
+        .bot
+        .delete_message(handler.msg.chat.id, status_msg.id)
+        .await?;
+
+    Ok(())
+}
+
+async fn send_files<'a>(
+    handler: &MessageHandler<'a>,
+    files: &[PathBuf],
+) -> anyhow::Result<Vec<Message>> {
+    let reqs = files
+        .iter()
+        .as_slice()
+        .par_chunks(10)
+        .map(files_to_input_media)
+        .map(|files| {
+            handler
+                .bot
+                .send_media_group(handler.msg.chat.id, files)
+                .reply_to_message_id(handler.msg.id)
+                .send()
+        })
+        .collect::<Vec<_>>();
+    let reqs = futures::future::join_all(reqs).await;
+    let reqs = reqs
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+
+    trace!("Uploaded files: {reqs:#?}", reqs = reqs);
+
+    Ok(reqs)
 }
 
 fn files_to_input_media<TFiles, TFile>(files: TFiles) -> Vec<InputMedia>

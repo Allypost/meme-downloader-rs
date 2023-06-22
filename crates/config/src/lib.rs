@@ -324,7 +324,7 @@ impl FileConfiguration {
         let p = path.as_ref();
 
         if !p.is_file() {
-            eprintln!("Config file {:#?} does not exist or is not a file", &p);
+            eprintln!("Config file {:?} does not exist or is not a file", &p);
             return None;
         }
 
@@ -363,7 +363,7 @@ impl FileConfiguration {
         }
 
         if !file.exists() {
-            println!("Config file not found. Creating one at {file:#?}");
+            println!("Config file not found. Creating one at {file:?}");
             let mut f = fs::File::create(&file);
             let res: Result<_, _> = f
                 .as_mut()

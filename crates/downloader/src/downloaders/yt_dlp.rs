@@ -7,9 +7,9 @@ use std::{path::PathBuf, process};
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let yt_dlp = &CONFIGURATION.yt_dlp_path;
-    debug!("`yt-dlp' binary: {:#?}", &yt_dlp);
+    debug!("`yt-dlp' binary: {:?}", &yt_dlp);
     let output_template = get_output_template(download_dir);
-    debug!("template: {:#?}", &output_template);
+    debug!("template: {:?}", &output_template);
     let mut cmd = process::Command::new(yt_dlp);
     let cmd = cmd
         .arg("--no-check-certificate")

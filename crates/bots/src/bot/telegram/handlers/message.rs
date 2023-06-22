@@ -119,12 +119,12 @@ impl<'a> MessageHandler<'a> {
         {
             let file_id = match &media_kind {
                 MediaKind::Video(MediaVideo { video, .. }) => {
-                    trace!("Got video: {video:#?}");
+                    trace!("Got video: {video:?}");
                     Some(&video.file.id)
                 }
 
                 MediaKind::Animation(MediaAnimation { animation, .. }) => {
-                    trace!("Got animation: {animation:#?}");
+                    trace!("Got animation: {animation:?}");
                     Some(&animation.file.id)
                 }
 
@@ -246,13 +246,15 @@ async fn split_msg_video(
     handler: &MessageHandler<'_>,
     telegram_file_id: &str,
 ) -> anyhow::Result<()> {
+    trace!("Splitting video: {id:?}", id = telegram_file_id);
+
     let status_msg = handler
         .send_reply("Splitting video...")
         .await
         .map_err(|e| anyhow!(e))?;
 
     let f = handler.bot.get_file(telegram_file_id).await?;
-    trace!("Got file: {:#?}", f);
+    trace!("Got file: {:?}", f);
 
     let download_dir = create_temp_dir()?;
     defer! {
@@ -298,7 +300,7 @@ async fn split_msg_video(
 
     let reqs = send_files(handler, &scene_files).await?;
 
-    trace!("Uploaded files: {reqs:#?}", reqs = reqs);
+    trace!("Uploaded files: {reqs:?}", reqs = reqs);
 
     handler
         .bot
@@ -333,7 +335,7 @@ async fn send_files<'a>(
         .flatten()
         .collect::<Vec<_>>();
 
-    trace!("Uploaded files: {reqs:#?}", reqs = reqs);
+    trace!("Uploaded files: {reqs:?}", reqs = reqs);
 
     Ok(reqs)
 }

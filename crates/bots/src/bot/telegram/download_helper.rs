@@ -46,7 +46,7 @@ impl DownloadResult {
 pub fn download_tmp_file(url: &str) -> Result<DownloadResult, String> {
     let download_dir =
         create_temp_dir().map_err(|e| format!("Error while getting temp dir: {e:?}"))?;
-    trace!("Downloading to temp dir: {:#?}", &download_dir);
+    trace!("Downloading to temp dir: {:?}", &download_dir);
     let files = downloader::download_file(url, &download_dir)?;
 
     Ok(DownloadResult {

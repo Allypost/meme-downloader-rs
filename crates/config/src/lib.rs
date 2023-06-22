@@ -34,6 +34,11 @@ pub struct TelegramBotConfig {
     /// Used to restrict access to the bot or allow additional commands
     /// By default, also saves media sent by the owner to the memes directory
     pub owner_id: Option<u64>,
+
+    /// The Telegram API URL for the bot to use.
+    /// Can be used if a Local API server is in use <https://github.com/tdlib/telegram-bot-api>.
+    /// Defaults to the standard https://api.telegram.org
+    pub api_url: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -209,6 +214,12 @@ pub struct Args {
     #[cfg(feature = "telegram-bot")]
     #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "OWNER_ID", env = "MEME_DOWNLOADER_TELEGRAM_OWNER_ID"))]
     pub telegram_owner_id: Option<u64>,
+    /// The Telegram API URL for the bot to use.
+    /// Can be used if a Local API server is in use <https://github.com/tdlib/telegram-bot-api>.
+    /// Defaults to the standard https://api.telegram.org
+    #[cfg(feature = "telegram-bot")]
+    #[cfg_attr(feature = "telegram-bot", arg(long, default_value = None, value_name = "API_URL", env = "MEME_DOWNLOADER_TELEGRAM_API_URL"))]
+    pub telegram_api_url: Option<String>,
 }
 
 impl Args {
@@ -235,6 +246,14 @@ impl Args {
                 config.telegram = Some(TelegramBotConfig {
                     bot_token: telegram_bot_token.into(),
                     owner_id: self.telegram_owner_id,
+                    api_url: self.telegram_api_url.clone(),
+                });
+            }
+
+            if let Some(telegram_api_url) = &self.telegram_api_url {
+                config.telegram = config.telegram.as_mut().map(|x| {
+                    x.api_url = Some(telegram_api_url.clone());
+                    x.clone()
                 });
             }
         }

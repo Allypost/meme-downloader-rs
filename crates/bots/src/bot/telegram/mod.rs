@@ -1,6 +1,7 @@
 use crate::bot::telegram::handlers::message::MessageHandler;
 use config::CONFIGURATION;
 use log::{debug, error, info, trace};
+use reqwest::Url;
 use std::{process::exit, thread};
 use teloxide::{prelude::*, types::Me, utils::command::BotCommands};
 use tokio::runtime;
@@ -38,7 +39,18 @@ pub async fn run() {
         }
     };
 
-    let bot = Bot::new(bot_token);
+    let bot_api_url = CONFIGURATION
+        .telegram
+        .as_ref()
+        .and_then(|x| x.api_url.clone())
+        .unwrap_or("https://api.telegram.org".to_string());
+
+    let bot_api_url = Url::parse(&bot_api_url).unwrap_or_else(|e| {
+        error!("Error while parsing Telegram API URL: {}", e);
+        exit(1);
+    });
+
+    let bot = Bot::new(bot_token).set_api_url(bot_api_url);
 
     match bot.get_me().send().await {
         Ok(user) => {
@@ -92,6 +104,7 @@ async fn run_listener(bot: Bot) {
 
             let res = runtime.block_on(
                 bot.send_message(msg.chat.id, format!("Error: {e:?}"))
+                    .allow_sending_without_reply(true)
                     .reply_to_message_id(msg.id)
                     .send(),
             );

@@ -308,6 +308,7 @@ dependencies = [
  "infer",
  "log",
  "rayon",
+ "reqwest",
  "scopeguard",
  "teloxide",
  "tokio",

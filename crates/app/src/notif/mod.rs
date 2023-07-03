@@ -1,4 +1,4 @@
-use notify_rust::{error::Error, Notification, NotificationHandle, Timeout, Urgency};
+use notify_rust::{error::Error, Notification, Timeout, Urgency};
 
 #[derive(Debug)]
 pub struct NotificationInfo {
@@ -9,10 +9,11 @@ pub struct NotificationInfo {
     pub message: String,
 }
 
-pub fn send_notification(info: &NotificationInfo) -> Result<NotificationHandle, Error> {
+pub fn send_notification(info: &NotificationInfo) -> Result<(), Error> {
     let mut notif = Notification::new();
 
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "linux")]
+    {
         notif.urgency(info.urgency);
     }
 
@@ -23,5 +24,7 @@ pub fn send_notification(info: &NotificationInfo) -> Result<NotificationHandle, 
         .body(&info.message)
         .icon(&info.icon);
 
-    notif.show()
+    notif.show()?;
+
+    Ok(())
 }

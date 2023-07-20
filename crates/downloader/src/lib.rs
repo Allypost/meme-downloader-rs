@@ -8,6 +8,8 @@ use std::{env, path::PathBuf};
 use downloaders::{instagram, twitter, yt_dlp};
 use log::{debug, info};
 
+use crate::downloaders::mastodon;
+
 mod downloaders;
 
 pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, String> {
@@ -27,6 +29,10 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
         twitter_media_url if twitter::MEDIA_URL_MATCH.is_match(url) => {
             info!("Found URL is twitter media. Downloading...");
             twitter::download_media_url(download_dir, twitter_media_url)?
+        }
+        mastodon_url if mastodon::is_mastodon_toot(url) => {
+            info!("Found URL is mastodon toot. Downloading...");
+            mastodon::screenshot_toot(download_dir, mastodon_url)?
         }
         _ => {
             info!("Trying to download with yt-dlp...");

@@ -21,7 +21,7 @@ tokio = { version = "1.28.2", features = [
 
 [features]
 default = ["ask-for-url"]
-all = ["desktop-notifications", "bots"]
+all = ["desktop-notifications", "bots", "ask-for-url"]
 bots = ["telegram-bot", "dep:tokio"]
 ask-for-url = ["atty"]
 desktop-notifications = ["dep:notify-rust"]

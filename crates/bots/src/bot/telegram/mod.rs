@@ -24,20 +24,16 @@ enum Command {
 }
 
 pub async fn run() {
-    let bot_token: &str = match CONFIGURATION
+    let bot_token = CONFIGURATION
         .telegram
         .as_ref()
-        .map(|t| t.bot_token.as_ref())
-    {
-        Some(token) => {
-            info!("Starting Telegram bot");
-            token
-        }
-        None => {
+        .and_then(|t| t.bot_token.as_ref())
+        .unwrap_or_else(|| {
             error!("No Telegram bot token provided. Please provide one.");
             exit(1);
-        }
-    };
+        });
+
+    trace!("Using Telegram bot token: {}", bot_token);
 
     let bot_api_url = CONFIGURATION
         .telegram
@@ -45,12 +41,18 @@ pub async fn run() {
         .and_then(|x| x.api_url.clone())
         .unwrap_or("https://api.telegram.org".to_string());
 
+    trace!("Trying Telegram API URL: {}", bot_api_url);
+
     let bot_api_url = Url::parse(&bot_api_url).unwrap_or_else(|e| {
         error!("Error while parsing Telegram API URL: {}", e);
         exit(1);
     });
 
+    trace!("Using Telegram API URL: {}", bot_api_url);
+
     let bot = Bot::new(bot_token).set_api_url(bot_api_url);
+
+    info!("Starting Telegram bot");
 
     match bot.get_me().send().await {
         Ok(user) => {

@@ -3,10 +3,11 @@
 #![allow(clippy::single_match_else)]
 #![allow(clippy::manual_let_else)]
 
+use std::{fs, path::PathBuf, process::exit};
+
 use config::{APPLICATION_NAME, CONFIGURATION};
 use log::{error, info, trace};
 use logger::LoggerConfig;
-use std::{fs, path::PathBuf, process::exit};
 
 #[cfg(feature = "desktop-notifications")]
 mod notif;
@@ -22,12 +23,12 @@ fn main() {
     let download_url = if let Ok(url) = get_download_url() {
         url
     } else {
-        println!("Failed to get download URL.");
+        eprintln!("Failed to get download URL.");
         exit(1);
     };
 
     if download_url.is_empty() {
-        println!("No download URL provided. Please provide one.");
+        eprintln!("No download URL provided. Please provide one.");
         exit(1);
     }
 
@@ -38,7 +39,7 @@ fn main() {
     )
     .is_err()
     {
-        println!("Failed to initialize logger.");
+        eprintln!("Failed to initialize logger.");
         exit(1);
     }
 
@@ -133,12 +134,12 @@ fn run_telegram_bot() {
     )
     .is_err()
     {
-        println!("Failed to initialize logger.");
+        eprintln!("Failed to initialize logger.");
         exit(1);
     }
 
     if CONFIGURATION.telegram.is_none() {
-        println!("No Telegram configuration provided. Please provide one.");
+        eprintln!("No Telegram configuration provided. Please provide one.");
         exit(1);
     }
 

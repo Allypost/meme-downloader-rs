@@ -1,7 +1,9 @@
+[app]
 # The directory to save memes to.
 # If not provided, $HOME/MEMES will be used
 memes_directory = "~/MEMES"
 
+# [dependencies]
 # Path to the yt-dlp executable.
 # If not provided, yt-dlp will be searched for in your path
 #yt_dlp_path = "/usr/local/bin/yt-dlp"
@@ -14,9 +16,13 @@ memes_directory = "~/MEMES"
 # If not provided, ffprobe will be searched for in $PATH
 #ffprobe_path = "/usr/bin/ffprobe"
 
+# Path to the scenedetect executable
+# If not provided, scenedetect will be searched for in $PATH
+# scenedetect_path = "/usr/bin/scenedetect"
 
 # Telegram bot settings
 # ---------------------
-# [telegram]
+# [bots.telegram]
 # bot_token = "some-bot-token"
 # owner_id = "123456789"
+# api_url = "https://api.telegram.org"

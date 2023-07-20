@@ -77,9 +77,6 @@ impl Config {
         let args = CliArgs::parse();
         let file_config = FileConfiguration::new(args.app.config_path.as_deref()).unwrap();
 
-        dbg!(&args);
-        dbg!(&file_config);
-
         config.merge_file_config(&file_config);
         config.merge_args(&args);
 
@@ -127,7 +124,6 @@ impl Config {
 
         #[cfg(feature = "telegram-bot")]
         {
-            dbg!(&args);
             config.run.run_as_bot = args
                 .bots
                 .telegram
@@ -162,17 +158,13 @@ impl Config {
     }
 
     fn merge_args(&mut self, args: &CliArgs) -> &Self {
-        dbg!(&self);
         args.merge_into_config(self);
-        dbg!(&self);
 
         self
     }
 
     fn merge_file_config(&mut self, file_config: &FileConfiguration) -> &Self {
-        dbg!(&self);
         file_config.merge_into_config(self);
-        dbg!(&self);
 
         self
     }
@@ -268,8 +260,6 @@ impl Configuration {
         let mut config = Self::default();
         let args = CliArgs::parse();
         let file_config = FileConfiguration::new(args.app.config_path.as_deref()).unwrap();
-        dbg!(&args);
-        dbg!(&file_config);
 
         config.merge_file_config(&file_config);
         config.merge_args(&args);

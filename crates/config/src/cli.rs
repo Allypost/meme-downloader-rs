@@ -92,7 +92,7 @@ impl CliArgs {
             }
         }
 
-        #[cfg(any(feature = "telegram-bot"))]
+        #[cfg(feature = "telegram-bot")]
         {
             use self::bot::{BotArgs, TelegramBotArgs};
             match &self.bots {
@@ -167,7 +167,7 @@ pub struct AppArgs {
     pub app_config: Option<AppConfig>,
 }
 
-#[cfg(any(feature = "telegram-bot"))]
+#[cfg(feature = "telegram-bot")]
 mod bot {
     use clap::Args;
     use serde::{Deserialize, Serialize};

@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-#[allow(clippy::clone_double_ref)]
+#[allow(suspicious_double_ref_op)]
 #[allow(dead_code)]
 pub fn check_results<TVal: Debug, TErr: Display>(
     result: Vec<Result<TVal, TErr>>,

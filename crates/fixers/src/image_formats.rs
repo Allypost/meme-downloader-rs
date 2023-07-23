@@ -99,12 +99,11 @@ fn check_and_fix_file(file_path: &PathBuf) -> Result<PathBuf, String> {
         normalized_extension_file_path = normalized_extension_file_path
     );
     if let Some(file_ext) = normalized_extension_file_path.extension() {
-        trace!(
-            "File extension '{file_ext:?}` vs '{file_codec_extension:?}`",
-            file_ext = file_ext.to_str().unwrap_or_default()
-        );
+        let file_ext = file_ext.to_str().unwrap_or_default();
 
-        if file_codec_extension == file_ext.to_str().unwrap_or_default() {
+        trace!("File extension {file_ext:?} vs {to_extension:?}");
+
+        if file_ext == (*to_extension) {
             info!(
                 "File {file_path:?} is already in preferred format",
                 file_path = file_path

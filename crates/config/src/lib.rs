@@ -124,12 +124,11 @@ impl Config {
 
         #[cfg(feature = "telegram-bot")]
         {
-            config.run.run_as_bot = args
-                .bots
-                .telegram
-                .map(|x| x.run_as_bot)
-                .filter(|x| *x)
-                .map(|_| RunAsBot::Telegram);
+            config.run.run_as_bot = if args.bots.telegram.run_as_bot {
+                Some(RunAsBot::Telegram)
+            } else {
+                None
+            };
 
             match &config.run.run_as_bot {
                 Some(RunAsBot::Telegram) if config.bots.telegram.is_none() => {
@@ -310,7 +309,7 @@ impl Configuration {
 
         #[cfg(feature = "telegram-bot")]
         {
-            if !args.bots.telegram.map_or(false, |x| x.run_as_bot) {
+            if !args.bots.telegram.run_as_bot {
                 config.telegram = None;
             } else if config.telegram.is_none() {
                 eprintln!("Telegram bot config not set");

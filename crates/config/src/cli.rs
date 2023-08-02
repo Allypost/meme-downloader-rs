@@ -43,23 +43,21 @@ impl CliArgs {
 
         #[cfg(feature = "telegram-bot")]
         {
-            if let Some(telegram) = &self.bots.telegram {
-                if telegram.run_as_bot {
-                    if let Some(telegram_config) = telegram.config.as_ref() {
-                        if let Some(telegram_bot_token) = telegram_config.bot_token.as_deref() {
-                            config.telegram = Some(crate::common::TelegramBotConfig {
-                                bot_token: Some(telegram_bot_token.to_owned()),
-                                owner_id: telegram_config.owner_id,
-                                api_url: telegram_config.api_url.clone(),
-                            });
-                        }
+            if self.bots.telegram.run_as_bot {
+                if let Some(telegram_config) = self.bots.telegram.config.as_ref() {
+                    if let Some(telegram_bot_token) = telegram_config.bot_token.as_deref() {
+                        config.telegram = Some(crate::common::TelegramBotConfig {
+                            bot_token: Some(telegram_bot_token.to_owned()),
+                            owner_id: telegram_config.owner_id,
+                            api_url: telegram_config.api_url.clone(),
+                        });
+                    }
 
-                        if let Some(telegram_api_url) = telegram_config.api_url.as_deref() {
-                            config.telegram = config.telegram.as_mut().map(|x| {
-                                x.api_url = Some(telegram_api_url.to_owned());
-                                x.clone()
-                            });
-                        }
+                    if let Some(telegram_api_url) = telegram_config.api_url.as_deref() {
+                        config.telegram = config.telegram.as_mut().map(|x| {
+                            x.api_url = Some(telegram_api_url.to_owned());
+                            x.clone()
+                        });
                     }
                 }
             }
@@ -99,10 +97,10 @@ impl CliArgs {
                 #[cfg(feature = "telegram-bot")]
                 BotArgs {
                     telegram:
-                        Some(TelegramBotArgs {
+                        TelegramBotArgs {
                             run_as_bot: true,
                             config: Some(telegram_config),
-                        }),
+                        },
                 } => {
                     if let Some(telegram_bot_token) = &telegram_config.bot_token {
                         config.bots.telegram = Some(crate::common::TelegramBotConfig {
@@ -178,7 +176,7 @@ mod bot {
     pub struct BotArgs {
         #[cfg(feature = "telegram-bot")]
         #[command(flatten, next_help_heading = Some("Telegram bot config"))]
-        pub telegram: Option<TelegramBotArgs>,
+        pub telegram: TelegramBotArgs,
     }
 
     #[cfg(feature = "telegram-bot")]

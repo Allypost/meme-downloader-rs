@@ -13,8 +13,6 @@ use logger::LoggerConfig;
 mod notif;
 
 fn main() {
-    dbg!((*CONFIG).clone());
-
     #[cfg(feature = "telegram-bot")]
     {
         if let Some(config::RunAsBot::Telegram) = CONFIG.run.run_as_bot {

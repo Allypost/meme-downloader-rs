@@ -5,7 +5,7 @@
 
 use std::{fs, path::PathBuf, process::exit};
 
-use config::{APPLICATION_NAME, CONFIGURATION};
+use config::{APPLICATION_NAME, CONFIG};
 use log::{error, info, trace};
 use logger::LoggerConfig;
 
@@ -13,9 +13,11 @@ use logger::LoggerConfig;
 mod notif;
 
 fn main() {
+    dbg!((*CONFIG).clone());
+
     #[cfg(feature = "telegram-bot")]
     {
-        if CONFIGURATION.telegram.is_some() {
+        if let Some(config::RunAsBot::Telegram) = CONFIG.run.run_as_bot {
             run_telegram_bot();
         }
     }
@@ -43,9 +45,9 @@ fn main() {
         exit(1);
     }
 
-    trace!("Config: {:?}", *config::CONFIGURATION);
+    trace!("Config: {:?}", *CONFIG);
 
-    if CONFIGURATION.args_fix {
+    if CONFIG.run.fix {
         let file_path = PathBuf::from(&download_url);
 
         info!("Fixing file: {:?}", &file_path);
@@ -58,7 +60,7 @@ fn main() {
         return;
     }
 
-    let meme_dir = CONFIGURATION.memes_directory.clone();
+    let meme_dir = CONFIG.app.memes_directory.clone();
     if !meme_dir.exists() {
         info!("Memes directory does not exist. Creating...");
         fs::create_dir_all(&meme_dir).unwrap_or_else(|e| {
@@ -138,7 +140,7 @@ fn run_telegram_bot() {
         exit(1);
     }
 
-    if CONFIGURATION.telegram.is_none() {
+    if CONFIG.bots.telegram.is_none() {
         eprintln!("No Telegram configuration provided. Please provide one.");
         exit(1);
     }
@@ -154,7 +156,7 @@ fn run_telegram_bot() {
 }
 
 fn get_download_url() -> anyhow::Result<String> {
-    let download_url = CONFIGURATION.args_download_url.as_ref();
+    let download_url = CONFIG.run.download_url.as_ref();
 
     if cfg!(feature = "ask-for-url") {
         use std::io;

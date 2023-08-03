@@ -11,7 +11,7 @@ use anyhow::anyhow;
 use async_recursion::async_recursion;
 use config::CONFIGURATION;
 use futures::{self};
-use helpers::{dirs::create_temp_dir, results::option_contains};
+use helpers::{dirs::create_temp_dir, id::time_id, results::option_contains};
 use log::{debug, error, info, trace};
 use rayon::{
     prelude::{IntoParallelRefIterator, ParallelIterator},
@@ -145,6 +145,7 @@ impl<'a> MessageHandler<'a> {
         Ok(())
     }
 
+    #[allow(clippy::too_many_lines)]
     async fn handle_media_kind(&self, kind: &MediaKind) -> Result<(), String> {
         match kind {
             MediaKind::Text(MediaText { text, entities, .. }) => {
@@ -179,6 +180,18 @@ impl<'a> MessageHandler<'a> {
                     .collect::<Result<Result<Vec<_>, String>, _>>()
                     .map_err(|e| format!("Error while downloading file:\n\n{e:?}"))??;
 
+                defer! {
+                    download_results
+                        .par_iter()
+                        .map(DownloadResult::cleanup)
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .filter_map(std::result::Result::err)
+                        .for_each(|err| {
+                            error!("Error while cleaning up: {err:?}", err = err);
+                        });
+                }
+
                 self.edit_message(&status_msg, "Downloaded files. Uploading here...")
                     .await?;
 
@@ -204,11 +217,6 @@ impl<'a> MessageHandler<'a> {
                     info!("Downloaded files: {new_paths:?}");
                 }
 
-                download_results
-                    .par_iter()
-                    .map(DownloadResult::cleanup)
-                    .collect::<Result<_, _>>()?;
-
                 self.bot
                     .delete_message(self.msg.chat.id, status_msg.id)
                     .await
@@ -219,12 +227,36 @@ impl<'a> MessageHandler<'a> {
 
             MediaKind::Photo {
                 0: MediaPhoto { photo, .. },
-            } => {
-                trace!("Got photo: {photo:?}");
+            } if !photo.is_empty() => {
+                trace!("Got photo(s): {photo:?}");
 
-                self.send_reply("Received photo").await?;
+                let status_msg = self.send_reply("Received photo. Processing...").await?;
+                defer! {
+                    let res = futures::executor::block_on(async {
+                        self.bot.delete_message(self.msg.chat.id, status_msg.id).await
+                    });
+                    if let Err(e) = res {
+                        error!("Error while deleting status message: {e:?}");
+                    }
+                }
 
-                Ok(())
+                let mut photo = photo.clone();
+
+                photo.sort_unstable_by(|lt, gt| {
+                    let widths = gt.width.cmp(&lt.width);
+
+                    if widths == std::cmp::Ordering::Equal {
+                        gt.height.cmp(&lt.height)
+                    } else {
+                        widths
+                    }
+                });
+
+                let photo_id = photo.first().map(|p| p.file.id.clone()).ok_or_else(|| {
+                    format!("Failed to get file ID from photo: {photo:?}", photo = photo)
+                })?;
+
+                self.download_media_by_id(&photo_id).await.map(|_| ())
             }
 
             MediaKind::Video {
@@ -232,13 +264,116 @@ impl<'a> MessageHandler<'a> {
             } => {
                 trace!("Got video: {video:?}");
 
-                self.send_reply("Received video").await?;
+                let status_msg = self.send_reply("Received video. Processing...").await?;
+                defer! {
+                    let res = futures::executor::block_on(async {
+                        self.bot.delete_message(self.msg.chat.id, status_msg.id).await
+                    });
+                    if let Err(e) = res {
+                        error!("Error while deleting status message: {e:?}");
+                    }
+                }
 
-                Ok(())
+                let video_id = video.file.id.clone();
+
+                self.download_media_by_id(&video_id).await.map(|_| ())
             }
 
             _ => Err("Unknown media kind".to_string()),
         }
+    }
+
+    async fn download_media_by_id(&self, file_id: &str) -> Result<Vec<PathBuf>, String> {
+        trace!("Got file id: {id:?}", id = file_id);
+
+        let f = self
+            .bot
+            .get_file(file_id)
+            .await
+            .map_err(|e| format!("Error while getting file: {e:?}"))?;
+
+        trace!("Got file: {:?}", f);
+
+        let download_dir =
+            create_temp_dir().map_err(|e| format!("Error while getting temp dir: {e:?}"))?;
+        defer! {
+            if let Err(e) = fs::remove_dir_all(&download_dir) {
+                error!("Error while removing temp dir: {e:?}");
+            }
+        }
+
+        let download_file_path = download_dir.join(format!(
+            "{rand_id}.{id}.bin",
+            rand_id = time_id()
+                .map_err(|e| { format!("Error while getting random id:\n\n{e:?}", e = e) })?,
+            id = f.meta.unique_id
+        ));
+
+        trace!(
+            "Downloading message file {:?} to: {:?}",
+            file_id,
+            &download_file_path
+        );
+
+        let mut file = File::create(&download_file_path)
+            .await
+            .map_err(|e| format!("Error while creating file: {e:?}"))?;
+        defer! {
+            let _ = fs::remove_file(&download_file_path);
+        }
+
+        self.bot
+            .download_file(&f.path, &mut file)
+            .await
+            .map_err(|e| format!("Error while downloading file: {e:?}"))?;
+
+        trace!("Downloaded file: {:?}", file);
+
+        file.sync_all()
+            .await
+            .map_err(|e| format!("Error while syncing file: {e:?}"))?;
+
+        let mut paths = {
+            let download_file_path = download_file_path.clone();
+
+            tokio::task::spawn_blocking(move || {
+                fixers::fix_files(&[download_file_path.clone()])
+                    .map_err(|e| format!("Error while fixing file: {e:?}"))
+            })
+            .await
+            .map_err(|e| format!("Error while fixing file in blocking task:\n\n{e:?}", e = e))??
+        };
+
+        trace!("Fixed file paths: {paths:?}", paths = paths);
+
+        let files = files_to_input_media(&paths);
+
+        self.bot
+            .send_media_group(self.msg.chat.id, files)
+            .reply_to_message_id(self.msg.id)
+            .await
+            .map_err(|e| format!("Error while sending media group: {e:?}"))?;
+
+        if self.is_owner {
+            let new_paths = paths
+                .par_iter()
+                .map(|x| {
+                    let name = x
+                        .file_name()
+                        .ok_or_else(|| format!("Error while getting file name: {x:?}", x = x))?;
+                    let new_file_path = CONFIGURATION.memes_directory.join(name);
+
+                    fs::copy(x, &new_file_path)
+                        .map_err(|e| format!("Error while copying file: {e:?}"))?;
+
+                    Ok(new_file_path)
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            paths = new_paths;
+            info!("Downloaded files: {paths:?}");
+        }
+
+        Ok(paths)
     }
 }
 

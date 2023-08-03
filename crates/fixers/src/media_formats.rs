@@ -134,24 +134,7 @@ impl TranscodeInfo {
 fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Result<PathBuf, String> {
     let to_extension = to_format.extension;
 
-    let cache_from_path_suffix = if path_has_extension(from_path, to_extension) {
-        let suffix = "original";
-
-        info!(
-            "File {path:?} already has extension {extension:?}. Adding suffix {suffix:?}",
-            path = from_path,
-            extension = to_extension,
-            suffix = suffix,
-        );
-
-        Some(suffix)
-    } else {
-        None
-    };
-
-    let (cache_folder, cache_from_path) =
-        copy_file_to_cache_folder(from_path, cache_from_path_suffix)?;
-
+    let (cache_folder, cache_from_path) = copy_file_to_cache_folder(from_path)?;
     defer! {
         trace!("Deleting {path:?}", path = cache_folder);
         if let Err(e) = fs::remove_dir_all(&cache_folder) {
@@ -159,7 +142,23 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
         }
     }
 
-    let cache_to_path = cache_from_path.with_extension(to_extension);
+    let cache_to_path = {
+        let path = cache_from_path.with_extension(to_extension);
+
+        if path_has_extension(&path, to_extension) {
+            let new_file_name =
+                file_name_with_suffix_extension(&path, "transcoded").ok_or_else(|| {
+                    format!(
+                        "Failed to get file name with suffix extension of {path:?}",
+                        path = path,
+                    )
+                })?;
+
+            path.with_file_name(new_file_name)
+        } else {
+            path
+        }
+    };
 
     debug!(
         "Converting {from:?} to {to:?}",
@@ -202,6 +201,8 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
                 to = to_extension
             );
 
+            let transfer_file_times = transferable_file_times(from_path.into());
+
             let new_file_path = from_path.with_extension(to_extension);
 
             trace!(
@@ -217,17 +218,22 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
                 ));
             }
 
-            match copy_file_times(from_path, &new_file_path) {
-                Err(e) => {
-                    debug!("Failed to copy file times: {e:?}");
-                }
-                Ok(_) => {
-                    trace!("Copied file times from {path:?}", path = from_path);
+            if &new_file_path != from_path {
+                trace!("Deleting old file {path:?}", path = from_path);
+                if let Err(e) = move_to_trash(from_path) {
+                    debug!("Failed to delete {path:?}: {e:?}", path = from_path);
                 }
             }
 
-            if move_to_trash(from_path).is_ok() {
-                debug!("Deleted old file {from_path:?}");
+            match transfer_file_times {
+                Ok(transfer_file_times_to) => {
+                    if let Err(e) = transfer_file_times_to(&new_file_path) {
+                        debug!("Failed to transfer file times: {e:?}");
+                    }
+                }
+                Err(e) => {
+                    debug!("Failed to transfer file times: {e:?}");
+                }
             }
 
             Ok(new_file_path)
@@ -241,10 +247,7 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
     }
 }
 
-fn copy_file_to_cache_folder(
-    file_path: &Path,
-    with_suffix: Option<&str>,
-) -> Result<(PathBuf, PathBuf), String> {
+fn copy_file_to_cache_folder(file_path: &Path) -> Result<(PathBuf, PathBuf), String> {
     let id = time_thread_id().map_err(|e| format!("Failed to get time thread id: {e:?}"))?;
 
     let cache_folder = CONFIG.cache_dir().join(format!("transcode-{}", id));
@@ -259,14 +262,7 @@ fn copy_file_to_cache_folder(
     let cache_file_path = {
         let filename = file_path
             .file_name()
-            .and_then(std::ffi::OsStr::to_str)
             .ok_or_else(|| format!("Failed to get file name of {path:?}", path = file_path))?;
-
-        let filename = if let Some(suffix) = with_suffix {
-            format!("{}.{}", filename, suffix)
-        } else {
-            filename.to_string()
-        };
 
         cache_folder.join(filename)
     };
@@ -287,10 +283,43 @@ fn copy_file_to_cache_folder(
     Ok((cache_folder.clone(), cache_file_path))
 }
 
+fn transferable_file_times(
+    path_from: PathBuf,
+) -> Result<impl FnOnce(&Path) -> Result<(), String>, String> {
+    trace!("Getting file times of {path:?}", path = path_from);
+
+    let old_meta = path_from
+        .metadata()
+        .map_err(|e| format!("Failed to get metadata of {old:?}: {e:?}", old = path_from))?;
+
+    Ok(move |path_to: &Path| {
+        trace!("Setting file times of {new:?}", new = path_from);
+        filetime::set_file_times(
+            path_to,
+            FileTime::from_last_access_time(&old_meta),
+            FileTime::from_last_modification_time(&old_meta),
+        )
+        .map_err(|e| {
+            format!(
+                "Failed to set file times of {new:?}: {e:?}",
+                new = path_from
+            )
+        })
+    })
+}
+
 fn path_has_extension(path: &Path, wanted_extension: &str) -> bool {
     path.extension()
         .and_then(std::ffi::OsStr::to_str)
         .map_or(false, |extension| extension == wanted_extension)
+}
+
+fn file_name_with_suffix_extension(path: &Path, suffix: &str) -> Option<PathBuf> {
+    path.extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .map(|ext| format!("{suffix}.{ext}", ext = ext, suffix = suffix))
+        .map(|ext| path.with_extension(ext))
+        .and_then(|p| p.file_name().map(PathBuf::from))
 }
 
 fn get_stream_of_type<'a>(
@@ -302,25 +331,6 @@ fn get_stream_of_type<'a>(
         .iter()
         .filter(|s| s.codec_type.is_some())
         .find(|s| s.codec_type.as_ref().unwrap().as_str() == stream_type)
-}
-
-fn copy_file_times<'s>(old: &PathBuf, new: &'s PathBuf) -> Result<&'s PathBuf, String> {
-    trace!(
-        "Copying file times from {old:?} to {new:?}",
-        old = old,
-        new = new
-    );
-    let old_meta = old
-        .metadata()
-        .map_err(|e| format!("Failed to get metadata of {old:?}: {e:?}"))?;
-
-    let old_modification_time = FileTime::from_last_modification_time(&old_meta);
-    let old_access_time = FileTime::from_last_access_time(&old_meta);
-
-    filetime::set_file_times(new, old_access_time, old_modification_time)
-        .map_err(|e| format!("Failed to set file times of {new:?}: {e:?}"))?;
-
-    Ok(new)
 }
 
 #[derive(Debug, Clone, PartialEq)]

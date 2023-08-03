@@ -1,8 +1,8 @@
 use log::debug;
-use std::{fs, io, path::PathBuf};
+use std::{env, fs, io, path::PathBuf};
 
 pub fn move_to_trash(f: &PathBuf) -> Result<(), io::Error> {
-    if true {
+    if env::var_os("MEME_DOWNLOADER_TRASH_DISABLED").is_some() {
         debug!("Deleting file {f:?}");
         return fs::remove_file(f);
     }

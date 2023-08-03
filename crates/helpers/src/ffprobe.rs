@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use config::CONFIGURATION;
+use config::CONFIG;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error, fmt, io, num, path::Path, process, time};
 
@@ -19,7 +19,12 @@ pub fn ffprobe_config(
 ) -> Result<FfProbeResult, FfProbeError> {
     let path = path.as_ref();
 
-    let ffprobe_path = &CONFIGURATION.ffprobe_path;
+    let ffprobe_path = CONFIG
+        .dependencies
+        .ffprobe_path
+        .as_ref()
+        .ok_or_else(|| FfProbeError::MissingBinary("ffprobe".to_string()))?;
+
     let mut cmd = process::Command::new(ffprobe_path);
     {
         cmd.args(["-v", "quiet"])

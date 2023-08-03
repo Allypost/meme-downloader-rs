@@ -1,33 +1,11 @@
 use super::FixerReturn;
-use log::{debug, info};
+use log::{debug, info, trace};
 use std::{fs, path::PathBuf};
 
 pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
     info!("Checking file extension for {file_path:?}...");
 
-    let extension = file_path.extension().and_then(|x| return x.to_str());
-    match extension {
-        Some(ext) if ext == "unknown_video" => {
-            debug!("File extension is `unknown_video'. Trying to infer file extension...");
-        }
-        None => {
-            return Err(format!("Failed to get extension for file {:?}", &file_path));
-        }
-        Some(_) => {
-            info!(
-                "File extension for {:?} is OK. Skipping...",
-                &file_path.file_name().ok_or_else(|| {
-                    format!(
-                        "Failed to get file name for file {:?}",
-                        &file_path.file_name()
-                    )
-                })?
-            );
-            return Ok(file_path.clone());
-        }
-    }
-
-    debug!("Trying to infer file extension for {:?}", &file_path);
+    let extension = file_path.extension().and_then(std::ffi::OsStr::to_str);
 
     let file_ext = match infer::get_from_path(file_path) {
         Ok(Some(ext)) => ext.extension(),
@@ -36,6 +14,19 @@ pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
         }
     };
     debug!("Inferred file extension: {:?}", file_ext);
+
+    if let Some(extension) = extension {
+        if extension == file_ext {
+            info!("File extension is correct");
+            return Ok(file_path.clone());
+        }
+    }
+
+    trace!(
+        "File extension is incorrect ({:?} vs ({:?}))",
+        extension,
+        file_ext
+    );
 
     let new_file_path = file_path.with_extension(file_ext);
 

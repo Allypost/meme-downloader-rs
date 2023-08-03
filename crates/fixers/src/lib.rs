@@ -10,6 +10,7 @@ extern crate scopeguard;
 use std::path::PathBuf;
 
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use resolve_path::PathResolveExt;
 
 pub mod crop;
 pub mod file_extensions;
@@ -28,7 +29,9 @@ pub fn fix_files(paths: &Vec<PathBuf>) -> Result<Vec<PathBuf>, String> {
     paths
         .par_iter()
         .map(|path| {
-            let mut p = path.clone();
+            let mut p = path.resolve().canonicalize().map_err(|e| {
+                format!("Failed to canonicalize {path:?}: {e:?}", path = path, e = e)
+            })?;
             for filter in &fixers {
                 p = filter(&p)?;
             }

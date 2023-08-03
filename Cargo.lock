@@ -843,6 +843,7 @@ dependencies = [
  "infer",
  "log",
  "rayon",
+ "resolve-path",
  "scopeguard",
 ]
 

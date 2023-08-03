@@ -50,7 +50,7 @@ fn main() {
 
         info!("Fixing file: {:?}", &file_path);
 
-        fixers::fix_files(&vec![file_path]).unwrap_or_else(|e| {
+        fixers::fix_files(&[file_path]).unwrap_or_else(|e| {
             error!("Error fixing file: {:?}", e);
             exit(1);
         });

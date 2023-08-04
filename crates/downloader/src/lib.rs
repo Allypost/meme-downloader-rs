@@ -5,10 +5,8 @@
 
 use std::{env, path::PathBuf};
 
-use downloaders::{instagram, twitter, yt_dlp};
+use downloaders::{instagram, mastodon, tumblr, twitter, yt_dlp};
 use log::{debug, info};
-
-use crate::downloaders::mastodon;
 
 mod downloaders;
 
@@ -33,6 +31,10 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
         mastodon_url if mastodon::is_mastodon_toot(url) => {
             info!("Found URL is mastodon toot. Downloading...");
             mastodon::screenshot_toot(download_dir, mastodon_url)?
+        }
+        tumblr_url if tumblr::URL_MATCH.is_match(url) => {
+            info!("Found URL is tumblr post. Downloading...");
+            tumblr::download(download_dir, tumblr_url)?
         }
         _ => {
             info!("Trying to download with yt-dlp...");

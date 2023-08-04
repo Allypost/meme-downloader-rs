@@ -2,6 +2,7 @@ use std::{path::PathBuf, result::Result};
 
 pub mod instagram;
 pub mod mastodon;
+pub mod tumblr;
 pub mod twitter;
 pub mod yt_dlp;
 

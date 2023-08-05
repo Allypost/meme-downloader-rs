@@ -34,8 +34,8 @@ RUN chmod a=rx,u+s /usr/bin/update_yt-dlp.sh
 RUN /usr/bin/update_yt-dlp.sh
 COPY --from=builder /usr/src/app/.out/meme-downloader /usr/local/bin/
 ARG username=app
-ARG user_id=1001
-ARG group_id=1002
+ARG user_id=1000
+ARG group_id=1000
 RUN userdel --remove ubuntu; groupdel ubuntu; echo "Deleted default ubuntu user"
 RUN groupadd --gid ${group_id} ${username}
 RUN useradd --create-home --uid ${user_id} --gid ${group_id} ${username}

@@ -29,6 +29,9 @@ RUN mkdir -p /usr/share \
   && curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xj \
   && ln -s /usr/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs \
   && phantomjs --version
+RUN apt-get update && apt-get install -y \
+  xattr \
+  && echo "Done installing packages"
 COPY ./.docker/app/update_yt-dlp.sh /usr/bin/update_yt-dlp.sh
 RUN chmod a=rx,u+s /usr/bin/update_yt-dlp.sh
 RUN /usr/bin/update_yt-dlp.sh

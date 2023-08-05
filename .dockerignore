@@ -6,6 +6,7 @@
 .dockerignore
 .docker/
 !.docker/app/update-packages.sh
+!.docker/app/update_yt-dlp.sh
 docker-compose.yml
 docker-compose.*.yml
 
@@ -13,12 +14,14 @@ docker-compose.*.yml
 .DS_Store
 LICENSE
 README.md
-
-# editors
-.idea/
+config/
+test-media/
+.github/
+.drone.yml
 
 # artefacts
 target/
+.out/
 
 # editors
 .vscode/

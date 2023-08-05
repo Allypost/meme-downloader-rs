@@ -1,41 +1,47 @@
-FROM rust:1.68-alpine3.17 AS builder
-RUN apk add --no-cache musl-dev
-RUN rustup target add x86_64-unknown-linux-musl
+FROM rust:1.71 AS builder
+RUN apt-get update && apt-get install -y musl-tools musl-dev
+RUN rustup toolchain install nightly
+RUN rustup target add --toolchain nightly x86_64-unknown-linux-musl
 WORKDIR /usr/src/app
-RUN mkdir src
-RUN echo "fn main() {}" > src/main.rs
-COPY Cargo.* ./
-RUN cargo fetch --locked
-COPY src/ ./src/
+COPY . .
 ARG features=bots
 ENV RUSTFLAGS='-C target-feature=+crt-static'
-RUN cargo install --path . --target=x86_64-unknown-linux-musl --features "$features"
+RUN rustup run nightly cargo build \
+  -Z unstable-options \
+  --release \
+  --target=x86_64-unknown-linux-musl \
+  --bin 'meme-downloader' \
+  --out-dir '.out' \
+  --features "$features"
 
-FROM alpine as runner
-RUN apk -U add \
+FROM ubuntu:rolling as runner
+RUN apt-get update && apt-get install -y \
   ffmpeg \
-  yt-dlp \
-  busybox-openrc \
   sudo \
+  curl \
+  fontconfig \
+  bzip2 \
+  python3 \
   && echo "Done installing packages"
-RUN apk update && apk add --no-cache fontconfig curl curl-dev && \
-  mkdir -p /usr/share && \
-  cd /usr/share \
-  && curl -L https://github.com/Overbryd/docker-phantomjs-alpine/releases/download/2.11/phantomjs-alpine-x86_64.tar.bz2 | tar xj \
-  && ln -s /usr/share/phantomjs/phantomjs /usr/bin/phantomjs \
+ENV OPENSSL_CONF=/dev/null
+RUN mkdir -p /usr/share \
+  && cd /usr/share \
+  && curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xj \
+  && ln -s /usr/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs \
   && phantomjs --version
-RUN rc-update add crond
-COPY ./.docker/app/update-packages.sh /usr/src/update-packages.sh
-RUN echo "0 */2 * * * /bin/sh /usr/src/update-packages.sh" >> /var/spool/cron/crontabs/root
-COPY --from=builder /usr/local/cargo/bin/meme-download /usr/local/bin/
+COPY ./.docker/app/update_yt-dlp.sh /usr/bin/update_yt-dlp.sh
+RUN chmod a=rx,u+s /usr/bin/update_yt-dlp.sh
+RUN /usr/bin/update_yt-dlp.sh
+COPY --from=builder /usr/src/app/.out/meme-downloader /usr/local/bin/
 ARG username=app
 ARG user_id=1001
 ARG group_id=1002
-RUN addgroup -g ${group_id} ${username}
-RUN adduser -D -u ${user_id} -G ${username} ${username}
-RUN echo -e "${username}\tALL= NOPASSWD: /usr/sbin/crond" > "/etc/sudoers.d/${username}" \
-    && chown -c root:root /etc/sudoers \
-    && chmod -c 0440 /etc/sudoers
+RUN userdel --remove ubuntu; groupdel ubuntu; echo "Deleted default ubuntu user"
+RUN groupadd --gid ${group_id} ${username}
+RUN useradd --create-home --uid ${user_id} --gid ${group_id} ${username}
+RUN echo -e "${username}\tALL= NOPASSWD: /usr/sbin/crond, /usr/bin/update_yt-dlp.sh" > "/etc/sudoers.d/${username}" \
+  && chown -c root:root /etc/sudoers \
+  && chmod -c 0440 /etc/sudoers
 USER ${username}
-ENTRYPOINT ["meme-download"]
+ENTRYPOINT ["meme-downloader"]
 CMD [ "--help" ]

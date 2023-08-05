@@ -43,5 +43,6 @@ RUN echo -e "${username}\tALL= NOPASSWD: /usr/sbin/crond, /usr/bin/update_yt-dlp
   && chown -c root:root /etc/sudoers \
   && chmod -c 0440 /etc/sudoers
 USER ${username}
+LABEL org.opencontainers.image.authors="me@allypost.net"
 ENTRYPOINT ["meme-downloader"]
 CMD [ "--help" ]

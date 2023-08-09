@@ -16,22 +16,27 @@ RUN rustup run nightly cargo build \
 
 FROM ubuntu:rolling as runner
 RUN apt-get update && apt-get install -y \
-  ffmpeg \
   sudo \
   curl \
   fontconfig \
   bzip2 \
   python3 \
+  xattr \
+  xz-utils \
   && echo "Done installing packages"
+ARG FFMPEG_DOWNLOAD_URL=https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+RUN cd "$(mktemp --directory)" && \
+  curl -svL "${FFMPEG_DOWNLOAD_URL}" | tar xvJ \
+  && cd ffmpeg-*-amd64-static \
+  && mv ffmpeg ffprobe qt-faststart /usr/local/bin/ \
+  && cd .. \
+  && rm -rf "$(pwd)"
 ENV OPENSSL_CONF=/dev/null
 RUN mkdir -p /usr/share \
   && cd /usr/share \
   && curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xj \
   && ln -s /usr/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs \
   && phantomjs --version
-RUN apt-get update && apt-get install -y \
-  xattr \
-  && echo "Done installing packages"
 COPY ./.docker/app/update_yt-dlp.sh /usr/bin/update_yt-dlp.sh
 RUN chmod a=rx,u+s /usr/bin/update_yt-dlp.sh
 RUN /usr/bin/update_yt-dlp.sh

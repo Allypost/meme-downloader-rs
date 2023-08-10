@@ -5,7 +5,6 @@ use std::{
 };
 
 use config::CONFIG;
-use filetime::FileTime;
 use helpers::{
     ffprobe::{self, FfProbeResult, Stream},
     id::time_thread_id,
@@ -14,7 +13,7 @@ use helpers::{
 use image::ColorType;
 use log::{debug, error, info, trace};
 
-use crate::FixerReturn;
+use crate::{util::transferable_file_times, FixerReturn};
 
 pub fn convert_into_preferred_formats(file_path: &PathBuf) -> FixerReturn {
     debug!("Checking if {file_path:?} has unwanted formats");
@@ -281,31 +280,6 @@ fn copy_file_to_cache_folder(file_path: &Path) -> Result<(PathBuf, PathBuf), Str
     })?;
 
     Ok((cache_folder.clone(), cache_file_path))
-}
-
-fn transferable_file_times(
-    path_from: PathBuf,
-) -> Result<impl FnOnce(&Path) -> Result<(), String>, String> {
-    trace!("Getting file times of {path:?}", path = path_from);
-
-    let old_meta = path_from
-        .metadata()
-        .map_err(|e| format!("Failed to get metadata of {old:?}: {e:?}", old = path_from))?;
-
-    Ok(move |path_to: &Path| {
-        trace!("Setting file times of {new:?}", new = path_from);
-        filetime::set_file_times(
-            path_to,
-            FileTime::from_last_access_time(&old_meta),
-            FileTime::from_last_modification_time(&old_meta),
-        )
-        .map_err(|e| {
-            format!(
-                "Failed to set file times of {new:?}: {e:?}",
-                new = path_from
-            )
-        })
-    })
 }
 
 fn path_has_extension(path: &Path, wanted_extension: &str) -> bool {

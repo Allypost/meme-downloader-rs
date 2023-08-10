@@ -17,6 +17,7 @@ pub mod file_extensions;
 pub mod file_name;
 pub mod media_formats;
 pub mod split_scenes;
+mod util;
 
 pub fn fix_files(paths: &[PathBuf]) -> Result<Vec<PathBuf>, String> {
     let fixers: Vec<Fixer> = vec![

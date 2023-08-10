@@ -28,7 +28,7 @@ pub fn ffprobe_config(
     let mut cmd = process::Command::new(ffprobe_path);
     {
         cmd.args(["-v", "quiet"])
-            .args(["-print_format", "json"])
+            .args(["-print_format", "json=c=1"])
             .arg("-show_format")
             .arg("-show_streams");
 

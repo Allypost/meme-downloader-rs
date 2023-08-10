@@ -1,3 +1,5 @@
+use crate::util::transfer_file_times;
+
 use super::FixerReturn;
 use config::CONFIGURATION;
 use helpers::{ffprobe, results::option_contains, trash::move_to_trash};
@@ -100,6 +102,8 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
             output = stderr
         ));
     }
+
+    transfer_file_times(file_path, &new_filename)?;
 
     move_to_trash(file_path).map_err(|e| format!("Failed to move file to trash: {e:?}"))?;
 

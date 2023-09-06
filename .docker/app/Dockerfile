@@ -47,7 +47,7 @@ ARG group_id=1000
 RUN userdel --remove ubuntu; groupdel ubuntu; echo "Deleted default ubuntu user"
 RUN groupadd --gid ${group_id} ${username}
 RUN useradd --create-home --uid ${user_id} --gid ${group_id} ${username}
-RUN echo -e "${username}\tALL= NOPASSWD: /usr/sbin/crond, /usr/bin/update_yt-dlp.sh" > "/etc/sudoers.d/${username}" \
+RUN echo -e "${username}\tALL= NOPASSWD: /usr/bin/update_yt-dlp.sh" > "/etc/sudoers.d/${username}" \
   && chown -c root:root /etc/sudoers \
   && chmod -c 0440 /etc/sudoers
 USER ${username}

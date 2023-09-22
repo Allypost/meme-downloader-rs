@@ -1,9 +1,9 @@
 use super::FixerReturn;
-use log::{debug, info, trace};
+use log::{debug, trace};
 use std::{fs, path::PathBuf};
 
 pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
-    info!("Checking file extension for {file_path:?}...");
+    debug!("Checking file extension for {file_path:?}...");
 
     let extension = file_path.extension().and_then(std::ffi::OsStr::to_str);
 
@@ -17,7 +17,7 @@ pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
 
     if let Some(extension) = extension {
         if extension == file_ext {
-            info!("File extension is correct");
+            debug!("File extension is correct");
             return Ok(file_path.clone());
         }
     }
@@ -30,7 +30,7 @@ pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
 
     let new_file_path = file_path.with_extension(file_ext);
 
-    info!("Renaming file from {file_path:?} to {new_file_path:?}");
+    debug!("Renaming file from {file_path:?} to {new_file_path:?}");
     match fs::rename(file_path, &new_file_path) {
         Ok(_) => Ok(new_file_path),
         Err(e) => Err(format!("Failed to rename file: {e:?}")),

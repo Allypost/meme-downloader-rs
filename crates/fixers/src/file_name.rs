@@ -1,9 +1,9 @@
 use super::FixerReturn;
-use log::{debug, info};
+use log::{debug, trace};
 use std::{fs, path::PathBuf};
 
 pub fn fix_file_name(file_path: &PathBuf) -> FixerReturn {
-    info!("Checking file name for {file_path:?}...");
+    debug!("Checking file name for {file_path:?}...");
     let name = file_path.file_stem().and_then(|x| return x.to_str());
 
     let new_name = match name {
@@ -15,7 +15,7 @@ pub fn fix_file_name(file_path: &PathBuf) -> FixerReturn {
             return Err(format!("Failed to get name for file {:?}", &file_path));
         }
         Some(name) => {
-            info!("File name for {name:?} is OK. Skipping...");
+            debug!("File name for {name:?} is OK. Skipping...");
             return Ok(file_path.clone());
         }
     };
@@ -30,12 +30,12 @@ pub fn fix_file_name(file_path: &PathBuf) -> FixerReturn {
             )
         })?;
 
-    debug!("New file name: {new_name:?} (extension: {extension:?}) for file {file_path:?}");
+    trace!("New file name: {new_name:?} (extension: {extension:?}) for file {file_path:?}");
 
     let new_name = format!("{new_name}.{extension}");
     let new_file_path = file_path.with_file_name(new_name);
 
-    info!("Renaming file from {file_path:?} to {new_file_path:?}");
+    debug!("Renaming file from {file_path:?} to {new_file_path:?}");
 
     match fs::rename(file_path, &new_file_path) {
         Ok(_) => Ok(new_file_path),

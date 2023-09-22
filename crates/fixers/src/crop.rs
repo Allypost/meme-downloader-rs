@@ -3,12 +3,12 @@ use crate::util::transfer_file_times;
 use super::FixerReturn;
 use config::CONFIGURATION;
 use helpers::{ffprobe, results::option_contains, trash::move_to_trash};
-use log::{debug, info, trace};
+use log::{debug, trace};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{ffi::OsStr, fmt::Display, path::PathBuf, process};
 
 pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
-    info!("Auto cropping video {file_path:?}");
+    debug!("Auto cropping video {file_path:?}");
 
     let file_path_str = file_path
         .to_str()
@@ -24,7 +24,7 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
             trace!("Found video stream");
             s
         } else {
-            info!("File does not contain a video stream, skipping");
+            debug!("File does not contain a video stream, skipping");
             return Ok(file_path.into());
         };
 
@@ -48,7 +48,7 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
             trace!("Crop filters: {fs:?}");
             fs
         } else {
-            info!("No crop filters found, skipping");
+            trace!("No crop filters found, skipping");
             return Ok(file_path.into());
         }
     };
@@ -59,7 +59,7 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     debug!("Final crop filter: {final_crop_filter:?}");
 
     if final_crop_filter.width >= w && final_crop_filter.height >= h {
-        info!("Video is already cropped, skipping");
+        debug!("Video is already cropped, skipping");
         return Ok(file_path.into());
     }
 
@@ -83,9 +83,10 @@ pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
         .args(["-loglevel", "panic"])
         .args(["-i", file_path_str])
         .args(["-vf", &final_crop_filter.to_string()])
+        .args(["-map_metadata", "0", "-movflags", "use_metadata_tags"])
         .args(["-preset", "slow"])
         .arg(&new_filename);
-    info!("Running command {cmd:?}");
+    debug!("Running command {cmd:?}");
 
     let cmd_output = cmd
         .output()
@@ -212,10 +213,12 @@ fn get_crop_filter(
             .as_str(),
         ])
         .args(["-f", "null", "-"]);
+    trace!("Running command {cmd:?}");
 
     let cmd_output = cmd
         .output()
         .map_err(|e| format!("Failed to run command {cmd:?}: {e:?}"))?;
+    trace!("Command output: {:?}", &cmd_output);
     let stderr = String::from_utf8(cmd_output.stderr)
         .map_err(|e| format!("Failed to convert command output to UTF-8: {e:?}"))?;
 

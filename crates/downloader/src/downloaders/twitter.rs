@@ -1,6 +1,6 @@
 use super::DownloaderReturn;
 use crate::downloaders::yt_dlp;
-use log::{debug, info, trace};
+use log::{debug, trace};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::path::PathBuf;
@@ -19,7 +19,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     debug!("Trying to download tweet media from: {:?}", &url);
 
     yt_dlp::download(download_dir, url).or_else(|_e| {
-        info!("Failed to download with yt-dlp. Trying to screenshot...");
+        debug!("Failed to download with yt-dlp. Trying to screenshot...");
 
         screenshot_tweet(download_dir, url)
     })

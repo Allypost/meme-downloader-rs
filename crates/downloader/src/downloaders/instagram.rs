@@ -120,6 +120,6 @@ fn fetch_instagram_urls(url: &str) -> Result<Vec<String>, String> {
         .map(|x| x.unwrap().to_string())
         .collect::<Vec<String>>();
 
-    info!("Found multiple Instagram media");
+    debug!("Found multiple Instagram media");
     Ok(urls)
 }

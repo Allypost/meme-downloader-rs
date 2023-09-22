@@ -2,12 +2,12 @@ use super::DownloaderReturn;
 use crate::downloaders::USER_AGENT;
 use config::CONFIGURATION;
 use helpers::id::time_id;
-use log::{debug, info};
+use log::{debug, trace};
 use std::{path::PathBuf, process};
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let yt_dlp = &CONFIGURATION.yt_dlp_path;
-    debug!("`yt-dlp' binary: {:?}", &yt_dlp);
+    trace!("`yt-dlp' binary: {:?}", &yt_dlp);
     let output_template = get_output_template(download_dir);
     debug!("template: {:?}", &output_template);
     let mut cmd = process::Command::new(yt_dlp);
@@ -22,9 +22,9 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         .args(["--no-simulate", "--print", "after_move:filepath"])
         // .arg("--verbose")
         .arg(url);
-    info!("Running cmd: {:?}", &cmd);
+    debug!("Running cmd: {:?}", &cmd);
     let cmd_output = cmd.output();
-    debug!("Cmd output: {:?}", &cmd_output);
+    trace!("Cmd output: {:?}", &cmd_output);
     let mut err = String::new();
     let new_file_path = match cmd_output {
         Ok(process::Output {
@@ -36,7 +36,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
             let output_path = PathBuf::from(output.trim());
 
             if output_path.exists() {
-                info!("yt-dlp successful download to file: {:?}", output_path);
+                debug!("yt-dlp successful download to file: {:?}", output_path);
                 Ok(output_path)
             } else {
                 Err("yt-dlp finished but file does not exist.")

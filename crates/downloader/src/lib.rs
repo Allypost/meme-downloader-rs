@@ -17,27 +17,27 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
 
     let new_file_paths = match url {
         instagram_url if instagram::URL_MATCH.is_match(url) => {
-            info!("Found URL is instagram url. Downloading all post media.");
+            debug!("Found URL is instagram url. Downloading all post media.");
             instagram::download(download_dir, instagram_url)?
         }
         twitter_url if twitter::URL_MATCH.is_match(url) => {
-            info!("Found URL is twitter status. Trying to download post media...");
+            debug!("Found URL is twitter status. Trying to download post media...");
             twitter::download(download_dir, twitter_url)?
         }
         twitter_media_url if twitter::MEDIA_URL_MATCH.is_match(url) => {
-            info!("Found URL is twitter media. Downloading...");
+            debug!("Found URL is twitter media. Downloading...");
             twitter::download_media_url(download_dir, twitter_media_url)?
         }
         mastodon_url if mastodon::is_mastodon_toot(url) => {
-            info!("Found URL is mastodon toot. Downloading...");
+            debug!("Found URL is mastodon toot. Downloading...");
             mastodon::screenshot_toot(download_dir, mastodon_url)?
         }
         tumblr_url if tumblr::URL_MATCH.is_match(url) => {
-            info!("Found URL is tumblr post. Downloading...");
+            debug!("Found URL is tumblr post. Downloading...");
             tumblr::download(download_dir, tumblr_url)?
         }
         _ => {
-            info!("Trying to download with yt-dlp...");
+            debug!("Trying to download with yt-dlp...");
             yt_dlp::download(download_dir, url)?
         }
     };

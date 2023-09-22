@@ -11,7 +11,7 @@ use helpers::{
     trash::move_to_trash,
 };
 use image::ColorType;
-use log::{debug, error, info, trace};
+use log::{debug, error, trace};
 
 use crate::{util::transferable_file_times, FixerReturn};
 
@@ -194,7 +194,7 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
     let cmd_output = cmd.output();
     match cmd_output {
         Ok(process::Output { status, .. }) if status.success() && cache_to_path.exists() => {
-            info!(
+            debug!(
                 "Converted file {from:?} to {to}",
                 from = from_path,
                 to = to_extension
@@ -346,7 +346,7 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
             );
 
             if video_codec_ok && audio_codec_ok && extension_ok {
-                info!(
+                trace!(
                     "File {path:?} is already in preferred format",
                     path = file_path
                 );
@@ -361,7 +361,7 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
         can_handle: |codec| matches!(codec, "mpeg4" | "vp8" | "vp9" | "av1" | "hevc"),
         handle: |file_format_info, _matched_stream| {
             let from_path = PathBuf::from(file_format_info.format.filename.clone());
-            info!("Converting {path:?} into mp4", path = from_path);
+            trace!("Converting {path:?} into mp4", path = from_path);
             transcode_media_into(&from_path, &TranscodeInfo::mp4())
         },
     },
@@ -370,7 +370,7 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
         handle: |file_format_info, _matched_stream| {
             let from_path = PathBuf::from(file_format_info.format.filename.clone());
 
-            info!(
+            trace!(
                 "File {path:?} is already in preferred format",
                 path = from_path
             );
@@ -392,11 +392,11 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
 
             match (is_animated, color) {
                 (false, ColorType::Rgb8 | ColorType::Rgb16 | ColorType::Rgb32F) => {
-                    info!("Converting {path:?} into jpg", path = from_path);
+                    trace!("Converting {path:?} into jpg", path = from_path);
                     transcode_media_into(&from_path, &TranscodeInfo::jpg())
                 }
                 (false, ColorType::Rgba8 | ColorType::Rgba16 | ColorType::Rgba32F) => {
-                    info!("Converting {path:?} into png", path = from_path);
+                    trace!("Converting {path:?} into png", path = from_path);
                     transcode_media_into(&from_path, &TranscodeInfo::png())
                 }
 

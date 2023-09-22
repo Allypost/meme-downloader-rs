@@ -1,6 +1,6 @@
 use super::DownloaderReturn;
 use crate::downloaders::yt_dlp;
-use log::{debug, info, trace};
+use log::{debug, trace};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use regex::Regex;

@@ -38,7 +38,7 @@ pub fn fix_file_name(file_path: &PathBuf) -> FixerReturn {
     debug!("Renaming file from {file_path:?} to {new_file_path:?}");
 
     match fs::rename(file_path, &new_file_path) {
-        Ok(_) => Ok(new_file_path),
+        Ok(()) => Ok(new_file_path),
         Err(e) => Err(format!("Failed to rename file: {e:?}")),
     }
 }

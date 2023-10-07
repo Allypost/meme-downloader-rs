@@ -6,9 +6,10 @@ pub fn check_results<TVal: Debug, TErr: Display>(
     result: Vec<Result<TVal, TErr>>,
 ) -> Result<Vec<TVal>, String> {
     if result.iter().any(Result::is_err) {
-        let mapped = result.iter().filter(|x| x.is_err()).map(|x| {
-            return x.as_ref().unwrap_err().clone();
-        });
+        let mapped = result
+            .iter()
+            .filter(|x| x.is_err())
+            .map(|x| x.as_ref().unwrap_err());
 
         let mut ret = vec![];
         for r in mapped {

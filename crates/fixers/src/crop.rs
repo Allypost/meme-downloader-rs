@@ -196,22 +196,26 @@ fn get_crop_filter(
     file_path: &str,
     border_color: &BorderColor,
 ) -> Result<Option<CropFilter>, String> {
-    let cropdetect_filter = "cropdetect=mode=black:limit=24:round=2:reset=0";
+    let cropdetect_filter = {
+        let mut filters = vec!["eq=contrast=3.0"];
+
+        match border_color {
+            BorderColor::White => {
+                filters.push("negate");
+            }
+            BorderColor::Black => {}
+        };
+
+        filters.push("cropdetect=mode=black:limit=24:round=2:reset=0");
+
+        filters.join(",")
+    };
 
     let mut cmd = process::Command::new(&CONFIGURATION.ffmpeg_path);
     let cmd = cmd
         .arg("-hide_banner")
         .args(["-i", file_path])
-        .args([
-            "-vf",
-            (match border_color {
-                BorderColor::White => {
-                    format!("negate,{cropdetect_filter}")
-                }
-                BorderColor::Black => cropdetect_filter.to_string(),
-            })
-            .as_str(),
-        ])
+        .args(["-vf", cropdetect_filter.as_str()])
         .args(["-f", "null", "-"]);
     trace!("Running command {cmd:?}");
 

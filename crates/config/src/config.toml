@@ -26,3 +26,10 @@ memes_directory = "~/MEMES"
 # bot_token = "some-bot-token"
 # owner_id = "123456789"
 # api_url = "https://api.telegram.org"
+
+# Endpoints
+# ---------
+# [endpoints]
+# The base URL for the Twitter screenshot API. The URL to the tweet
+# will be simply appended to this.
+# twitter_screenshot_base_url = "https://twitter.igr.ec/"

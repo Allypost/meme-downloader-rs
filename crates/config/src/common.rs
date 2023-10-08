@@ -139,3 +139,30 @@ impl ProgramPathConfig {
         self
     }
 }
+
+const DEFAULT_TWITTER_SCREENSHOT_BASE_URL: &str = "https://twitter.igr.ec";
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Args)]
+
+pub struct EndpointConfig {
+    #[arg(long, default_value = None, env = "MEME_DOWNLOADER_ENDPOINT_TWITTER_SCREENSHOT", value_hint = ValueHint::Url)]
+    /// The base URL for the Twitter screenshot API.
+    pub(crate) twitter_screenshot_base_url: Option<String>,
+}
+
+impl EndpointConfig {
+    pub(crate) fn merge(&mut self, config: &Self) -> &Self {
+        if let Some(twitter_screenshot_base_url) = config.twitter_screenshot_base_url.as_ref() {
+            self.twitter_screenshot_base_url = Some(twitter_screenshot_base_url.clone());
+        }
+
+        self
+    }
+
+    pub fn twitter_screenshot_base_url(&self) -> String {
+        self.twitter_screenshot_base_url
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| DEFAULT_TWITTER_SCREENSHOT_BASE_URL.to_string())
+    }
+}

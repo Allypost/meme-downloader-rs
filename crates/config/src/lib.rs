@@ -44,6 +44,8 @@ pub struct Config {
     pub dependencies: common::ProgramPathConfig,
 
     pub bots: common::BotConfig,
+
+    pub endpoints: common::EndpointConfig,
 }
 
 impl Config {
@@ -206,6 +208,8 @@ pub struct Configuration {
     pub telegram: Option<common::TelegramBotConfig>,
 
     pub bots: Option<common::BotConfig>,
+
+    pub endpoints: common::EndpointConfig,
 }
 
 #[allow(dead_code)]
@@ -254,6 +258,8 @@ impl Configuration {
 
             #[cfg(feature = "telegram-bot")]
             telegram: config.bots.telegram,
+
+            endpoints: config.endpoints,
         }
     }
 

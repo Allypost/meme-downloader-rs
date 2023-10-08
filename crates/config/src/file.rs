@@ -8,7 +8,7 @@ use anyhow::{anyhow, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{AppConfig, BotConfig, ProgramPathConfig},
+    common::{AppConfig, BotConfig, EndpointConfig, ProgramPathConfig},
     Config, Configuration,
 };
 
@@ -53,6 +53,7 @@ impl From<OldFileConfiguration> for FileConfiguration {
                 #[cfg(feature = "telegram-bot")]
                 telegram: val.telegram,
             }),
+            endpoints: None,
         }
     }
 }
@@ -64,6 +65,8 @@ pub struct FileConfiguration {
     pub dependencies: Option<ProgramPathConfig>,
 
     pub bots: Option<BotConfig>,
+
+    pub endpoints: Option<EndpointConfig>,
 }
 
 impl FileConfiguration {
@@ -118,6 +121,10 @@ impl FileConfiguration {
             }
         }
 
+        if let Some(endpoints) = &self.endpoints {
+            config.endpoints.merge(endpoints);
+        }
+
         #[cfg(feature = "telegram-bot")]
         {
             if let Some(bots) = &self.bots {
@@ -164,6 +171,10 @@ impl FileConfiguration {
             }
         }
 
+        if let Some(endpoints) = &self.endpoints {
+            config.endpoints.merge(endpoints);
+        }
+
         #[cfg(feature = "telegram-bot")]
         {
             if let Some(bots) = &self.bots {
@@ -206,10 +217,21 @@ impl FileConfiguration {
             })
             .or(Some(other_bots));
 
+        let other_endpoint = other.endpoints.unwrap_or_default();
+        let endpoints = self
+            .endpoints
+            .map(|mut endpoints| {
+                endpoints.merge(&other_endpoint);
+
+                endpoints.clone()
+            })
+            .or(Some(other_endpoint));
+
         Self {
             app,
             dependencies,
             bots,
+            endpoints,
         }
     }
 

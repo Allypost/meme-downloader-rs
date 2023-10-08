@@ -4,7 +4,7 @@ use clap::{Args, Parser, ValueEnum, ValueHint};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{AppConfig, ProgramPathConfig},
+    common::{AppConfig, EndpointConfig, ProgramPathConfig},
     Config, Configuration,
 };
 
@@ -19,6 +19,9 @@ pub struct CliArgs {
     #[cfg(feature = "telegram-bot")]
     #[command(flatten, next_help_heading = Some("Bot config"))]
     pub bots: self::bot::BotArgs,
+
+    #[command(flatten, next_help_heading = Some("Endpoint config"))]
+    pub endpoints: EndpointConfig,
 }
 
 impl CliArgs {
@@ -69,6 +72,7 @@ impl CliArgs {
 
         config.args_download_url = self.app.download_url.clone();
         config.args_fix = self.app.fix;
+        config.endpoints.merge(&self.endpoints);
     }
 
     pub(crate) fn merge_into_config(&self, config: &mut Config) {
@@ -128,6 +132,7 @@ impl CliArgs {
 
         config.run.download_url = self.app.download_url.clone();
         config.run.fix = self.app.fix;
+        config.endpoints.merge(&self.endpoints);
     }
 }
 

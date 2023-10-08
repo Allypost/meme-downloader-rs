@@ -1,5 +1,6 @@
 use super::DownloaderReturn;
 use crate::downloaders::yt_dlp;
+use config::CONFIG;
 use log::{debug, trace};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -47,7 +48,8 @@ pub fn download_media_url(download_dir: &PathBuf, twitter_media_url: &str) -> Do
 fn screenshot_tweet(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     debug!("Trying to screenshot tweet: {:?}", &url);
 
-    let tweet_screenshot_url = format!("https://twitter.igr.ec/{url}");
+    let endpoint = CONFIG.endpoints.twitter_screenshot_base_url();
+    let tweet_screenshot_url = format!("{}/{}", endpoint.trim_end_matches('/'), url);
 
     trace!("Tweet screenshot URL: {:?}", &tweet_screenshot_url);
 

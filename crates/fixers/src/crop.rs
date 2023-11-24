@@ -197,7 +197,9 @@ fn get_crop_filter(
     border_color: &BorderColor,
 ) -> Result<Option<CropFilter>, String> {
     let cropdetect_filter = {
-        let mut filters = vec!["eq=contrast=3.0"];
+        let mut filters = vec![];
+
+        // filters.push("eq=contrast=3.0");
 
         match border_color {
             BorderColor::White => {

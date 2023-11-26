@@ -40,7 +40,6 @@ RUN mkdir -p /usr/share \
 COPY ./.docker/app/update_yt-dlp.sh /usr/bin/update_yt-dlp.sh
 RUN chmod a=rx,u+s /usr/bin/update_yt-dlp.sh
 RUN /usr/bin/update_yt-dlp.sh
-COPY --from=builder /usr/src/app/.out/meme-downloader /usr/local/bin/
 ARG username=app
 ARG user_id=1000
 ARG group_id=1000
@@ -50,6 +49,7 @@ RUN useradd --create-home --uid ${user_id} --gid ${group_id} ${username}
 RUN echo -e "${username}\tALL= NOPASSWD: /usr/bin/update_yt-dlp.sh" > "/etc/sudoers.d/${username}" \
   && chown -c root:root /etc/sudoers \
   && chmod -c 0440 /etc/sudoers
+COPY --from=builder /usr/src/app/.out/meme-downloader /usr/local/bin/
 USER ${username}
 LABEL org.opencontainers.image.authors="me@allypost.net"
 ENTRYPOINT ["meme-downloader"]

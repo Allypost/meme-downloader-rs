@@ -18,6 +18,8 @@ config/
 test-media/
 .github/
 .drone.yml
+.env
+mprocs.yaml
 
 # artefacts
 target/

@@ -7,7 +7,7 @@ use super::DownloaderReturn;
 use crate::downloaders::USER_AGENT;
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
-    log::info!("Downloading {:?} to {:?}", url, download_dir);
+    app_logger::info!("Downloading {:?} to {:?}", url, download_dir);
 
     let client = Client::builder()
         .user_agent(USER_AGENT)
@@ -22,7 +22,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         .map_err(|e| format!("Failed to get response: {:?}", e))?;
 
     let mime_type = res.headers().get("content-type").map(|x| x.to_str());
-    log::debug!("Got mime type: {:?}", mime_type);
+    app_logger::debug!("Got mime type: {:?}", mime_type);
     let mime_type = match mime_type {
         Some(Ok(mime_type)) => mime_type,
         _ => "",
@@ -38,7 +38,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     );
 
     let file_path = download_dir.join(file_name);
-    log::debug!("Writing to file: {:?}", &file_path);
+    app_logger::debug!("Writing to file: {:?}", &file_path);
     let mut out_file =
         File::create(&file_path).map_err(|e| format!("Failed to create file: {:?}", e))?;
 

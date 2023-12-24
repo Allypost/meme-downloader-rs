@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 app-fixers = { version = "*", path = "../app-fixers" }
-log = "0.4.19"
+app-logger = { version = "*", path = "../app-logger" }
 once_cell = "1.18.0"
 rayon = "1.7.0"
 regex = "1.8.4"

@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use app_config::CONFIGURATION;
 use app_helpers::dirs::create_temp_dir;
-use log::trace;
+use app_logger::trace;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 #[derive(Debug, Clone)]

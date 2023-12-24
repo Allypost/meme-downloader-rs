@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf};
 
-use log::{debug, LevelFilter};
+pub use log::{debug, error, info, trace, warn, LevelFilter};
 use log4rs::{
     append::{
         console::{ConsoleAppender, Target},

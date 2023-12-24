@@ -10,8 +10,8 @@ use app_helpers::{
     id::time_thread_id,
     trash::move_to_trash,
 };
+use app_logger::{debug, error, trace};
 use image::ColorType;
-use log::{debug, error, trace};
 
 use crate::{util::transferable_file_times, FixerReturn};
 

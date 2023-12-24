@@ -1,6 +1,6 @@
 use std::{path::PathBuf, result::Result, string};
 
-use log::{debug, trace};
+use app_logger::{debug, trace};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use regex::Regex;

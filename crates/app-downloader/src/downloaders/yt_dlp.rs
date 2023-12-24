@@ -2,7 +2,7 @@ use std::{path::PathBuf, process};
 
 use app_config::CONFIGURATION;
 use app_helpers::id::time_id;
-use log::{debug, trace};
+use app_logger::{debug, trace};
 
 use super::DownloaderReturn;
 use crate::downloaders::{generic, USER_AGENT};

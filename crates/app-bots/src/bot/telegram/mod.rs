@@ -1,7 +1,7 @@
 use std::{process::exit, thread};
 
 use app_config::CONFIGURATION;
-use log::{debug, error, info, trace};
+use app_logger::{debug, error, info, trace};
 use reqwest::Url;
 use teloxide::{prelude::*, types::Me, utils::command::BotCommands};
 use tokio::runtime;

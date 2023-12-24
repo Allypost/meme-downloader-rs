@@ -2,7 +2,7 @@ use std::{ffi::OsStr, fmt::Display, path::PathBuf, process};
 
 use app_config::CONFIGURATION;
 use app_helpers::{ffprobe, results::option_contains, trash::move_to_trash};
-use log::{debug, trace};
+use app_logger::{debug, trace};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use super::FixerReturn;

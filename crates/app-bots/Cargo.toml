@@ -12,7 +12,7 @@ app-fixers = { version = "*", path = "../app-fixers" }
 futures = "0.3.28"
 app-helpers = { version = "*", path = "../app-helpers" }
 infer = "0.13.0"
-log = "0.4.19"
+app-logger = { version = "*", path = "../app-logger" }
 rayon = "1.7.0"
 reqwest = { version = "0.11.18", default-features = false }
 scopeguard = "1.1.0"

@@ -6,9 +6,9 @@ use std::{
 use anyhow::anyhow;
 use app_config::CONFIGURATION;
 use app_helpers::{dirs::create_temp_dir, id::time_id, results::option_contains};
+use app_logger::{debug, error, info, trace};
 use async_recursion::async_recursion;
 use futures::{self};
-use log::{debug, error, info, trace};
 use rayon::{
     prelude::{IntoParallelRefIterator, ParallelIterator},
     slice::ParallelSlice,

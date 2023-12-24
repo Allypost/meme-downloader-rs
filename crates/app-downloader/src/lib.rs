@@ -1,7 +1,7 @@
 use std::{env, path::PathBuf};
 
+use app_logger::{debug, info};
 use downloaders::{instagram, mastodon, tumblr, twitter, yt_dlp};
-use log::{debug, info};
 
 mod downloaders;
 

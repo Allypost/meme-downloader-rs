@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use log::{debug, trace};
+use app_logger::{debug, trace};
 
 use super::FixerReturn;
 

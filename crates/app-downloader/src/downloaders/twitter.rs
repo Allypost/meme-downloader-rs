@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use app_config::CONFIG;
-use log::{debug, trace};
+use app_logger::{debug, trace};
 use once_cell::sync::Lazy;
 use regex::Regex;
 

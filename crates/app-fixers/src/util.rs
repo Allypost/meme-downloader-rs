@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use app_logger::trace;
 use filetime::FileTime;
-use log::trace;
 
 pub fn transfer_file_times(path_from: &PathBuf, path_to: &PathBuf) -> Result<(), String> {
     trace!(

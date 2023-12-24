@@ -1,8 +1,7 @@
 use std::{fs, path::PathBuf, process::exit};
 
 use app_config::{APPLICATION_NAME, CONFIG};
-use app_logger::LoggerConfig;
-use log::{error, info, trace};
+use app_logger::{error, info, trace, LoggerConfig};
 
 #[cfg(feature = "desktop-notifications")]
 mod notif;
@@ -120,11 +119,11 @@ fn run_telegram_bot() {
         LoggerConfig::builder()
             .program_name(APPLICATION_NAME)
             .name_suffix("telegram-bot")
-            .file_log_level(log::LevelFilter::Debug)
+            .file_log_level(app_logger::LevelFilter::Debug)
             .stdout_log_level(if cfg!(debug_assertions) {
-                log::LevelFilter::Trace
+                app_logger::LevelFilter::Trace
             } else {
-                log::LevelFilter::Info
+                app_logger::LevelFilter::Info
             }),
     )
     .is_err()

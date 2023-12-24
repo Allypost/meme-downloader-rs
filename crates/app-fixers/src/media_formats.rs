@@ -381,27 +381,22 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
     },
     CodecHandler {
         can_handle: |codec| matches!(codec, "webp"),
-        handle: |file_format_info, matched_stream| {
+        handle: |file_format_info, _matched_stream| {
             let from_path = PathBuf::from(file_format_info.format.filename.clone());
             let img = image::open(&from_path).unwrap();
             let color = img.color();
 
-            let is_animated = {
-                // TODO: This is a hacky way to check if the webp is animated or not, but there's no easy way to do it
-                matched_stream.color_space.is_none()
-            };
-
-            match (is_animated, color) {
-                (false, ColorType::Rgb8 | ColorType::Rgb16 | ColorType::Rgb32F) => {
+            match color {
+                ColorType::Rgb8 | ColorType::Rgb16 | ColorType::Rgb32F => {
                     trace!("Converting {path:?} into jpg", path = from_path);
                     transcode_media_into(&from_path, &TranscodeInfo::jpg())
                 }
-                (false, ColorType::Rgba8 | ColorType::Rgba16 | ColorType::Rgba32F) => {
+                ColorType::Rgba8 | ColorType::Rgba16 | ColorType::Rgba32F => {
                     trace!("Converting {path:?} into png", path = from_path);
                     transcode_media_into(&from_path, &TranscodeInfo::png())
                 }
 
-                (false, color_type) => {
+                color_type => {
                     error!(
                         "File {path:?} has unknown color type {color_type:?}",
                         path = from_path,
@@ -413,16 +408,6 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
                          issue to the developers.",
                         color_type = color_type,
                     ))
-                }
-
-                (true, _color_type) => {
-                    error!("Unsupported animated webp file {path:?}", path = from_path);
-
-                    Err(
-                        "Animated webp files are not supported yet, please report this issue to \
-                         the developers."
-                            .to_string(),
-                    )
                 }
             }
         },

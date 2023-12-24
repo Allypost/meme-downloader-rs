@@ -17,7 +17,8 @@ reqwest = { version = "0.11.14", default-features = false, features = [
   "deflate",
   "gzip",
   "brotli",
-  "native-tls-vendored",
+  "rustls-tls",
+  "trust-dns",
 ] }
 url = "2.4.0"
 app-config = { version = "*", path = "../app-config" }

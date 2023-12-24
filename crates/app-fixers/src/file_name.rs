@@ -1,6 +1,8 @@
-use super::FixerReturn;
-use log::{debug, trace};
 use std::{fs, path::PathBuf};
+
+use log::{debug, trace};
+
+use super::FixerReturn;
 
 pub fn fix_file_name(file_path: &PathBuf) -> FixerReturn {
     debug!("Checking file name for {file_path:?}...");

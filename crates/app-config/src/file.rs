@@ -265,8 +265,8 @@ impl FileConfiguration {
     fn create_default_config_file() -> anyhow::Result<PathBuf> {
         let file = Self::default_config_path().ok_or_else(|| {
             anyhow!(
-                "Failed to get config directory. \
-                Please set the MEME_DOWNLOADER_CONFIG_DIR environment variable to a valid directory"
+                "Failed to get config directory. Please set the MEME_DOWNLOADER_CONFIG_DIR \
+                 environment variable to a valid directory"
             )
         })?;
 

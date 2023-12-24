@@ -3,10 +3,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::bot::telegram::{
-    download_helper::{self, DownloadResult},
-    Command,
-};
 use anyhow::anyhow;
 use app_config::CONFIGURATION;
 use app_helpers::{dirs::create_temp_dir, id::time_id, results::option_contains};
@@ -27,6 +23,11 @@ use teloxide::{
     utils::command::BotCommands,
 };
 use tokio::fs::File;
+
+use crate::bot::telegram::{
+    download_helper::{self, DownloadResult},
+    Command,
+};
 
 pub struct MessageHandler<'a> {
     bot: &'a Bot,
@@ -141,7 +142,11 @@ impl<'a> MessageHandler<'a> {
             }
         }
 
-        self.send_reply("Must be either a reply to a video message or be the text of a message containing video").await?;
+        self.send_reply(
+            "Must be either a reply to a video message or be the text of a message containing \
+             video",
+        )
+        .await?;
         Ok(())
     }
 

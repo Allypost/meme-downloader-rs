@@ -1,6 +1,7 @@
+use std::{process, thread, time};
+
 use anyhow::Result;
 use base64::Engine;
-use std::{process, thread, time};
 
 fn now_ns() -> Result<u128> {
     let ns = time::SystemTime::now()

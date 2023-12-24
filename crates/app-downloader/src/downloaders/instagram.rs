@@ -1,10 +1,12 @@
-use super::DownloaderReturn;
-use crate::downloaders::yt_dlp;
+use std::{path::PathBuf, result::Result, string};
+
 use log::{debug, trace};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use regex::Regex;
-use std::{path::PathBuf, result::Result, string};
+
+use super::DownloaderReturn;
+use crate::downloaders::yt_dlp;
 
 pub static URL_MATCH: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^https?://(www\.)?instagram.com/p/(?P<post_id>[^/?]+)").unwrap());

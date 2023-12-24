@@ -1,10 +1,3 @@
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::single_match_else)]
-#![allow(clippy::missing_errors_doc)]
-#![allow(clippy::uninlined_format_args)]
-#![allow(clippy::manual_let_else)]
-
 use std::{fs, path::PathBuf, process::exit};
 
 use app_config::{APPLICATION_NAME, CONFIG};
@@ -159,8 +152,7 @@ fn get_download_url() -> anyhow::Result<String> {
     let download_url = CONFIG.run.download_url.as_ref();
 
     if cfg!(feature = "ask-for-url") {
-        use std::io;
-        use std::io::prelude::*;
+        use std::{io, io::prelude::*};
 
         if let Some(download_url) = download_url {
             return Ok(download_url.to_string());

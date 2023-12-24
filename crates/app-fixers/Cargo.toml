@@ -14,3 +14,6 @@ log = "0.4.19"
 rayon = "1.7.0"
 resolve-path = "0.1.0"
 scopeguard = "1.2.0"
+
+[lints]
+workspace = true

@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
+use std::{collections::HashMap, error, fmt, io, num, path::Path, process, time};
+
 use app_config::CONFIG;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, error, fmt, io, num, path::Path, process, time};
 
 pub fn ffprobe(path: impl AsRef<Path>) -> Result<FfProbeResult, FfProbeError> {
     ffprobe_config(

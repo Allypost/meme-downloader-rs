@@ -1,6 +1,8 @@
-use super::FixerReturn;
-use log::{debug, trace};
 use std::{fs, path::PathBuf};
+
+use log::{debug, trace};
+
+use super::FixerReturn;
 
 pub fn fix_file_extension(file_path: &PathBuf) -> FixerReturn {
     debug!("Checking file extension for {file_path:?}...");

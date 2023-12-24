@@ -1,8 +1,9 @@
+use std::{fs, path::PathBuf};
+
 use app_config::CONFIGURATION;
 use app_helpers::dirs::create_temp_dir;
 use log::trace;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-use std::{fs, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct DownloadResult {

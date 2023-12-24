@@ -1,11 +1,12 @@
-use crate::util::transfer_file_times;
+use std::{ffi::OsStr, fmt::Display, path::PathBuf, process};
 
-use super::FixerReturn;
 use app_config::CONFIGURATION;
 use app_helpers::{ffprobe, results::option_contains, trash::move_to_trash};
 use log::{debug, trace};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use std::{ffi::OsStr, fmt::Display, path::PathBuf, process};
+
+use super::FixerReturn;
+use crate::util::transfer_file_times;
 
 pub fn auto_crop_video(file_path: &PathBuf) -> FixerReturn {
     debug!("Auto cropping video {file_path:?}");

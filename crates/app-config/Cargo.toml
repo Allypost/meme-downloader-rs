@@ -20,3 +20,6 @@ which = "4.4.0"
 [features]
 default = []
 telegram-bot = []
+
+[lints]
+workspace = true

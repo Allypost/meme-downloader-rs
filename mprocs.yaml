@@ -1,0 +1,16 @@
+procs:
+  dev:
+    autostart: false
+    shell: "cargo watch --clear --quiet --exec 'run --'"
+
+  dev-bot:
+    autostart: false
+    shell: "cargo watch --clear --quiet --exec 'run  --features bots -- --as-telegram-bot'"
+
+  format:
+    autostart: false
+    shell: "cargo clippy --fix --allow-dirty --allow-staged --features all -- && cargo fmt"
+
+  format-dev:
+    autostart: false
+    shell: "rustup run nightly cargo fmt --all && cargo clippy --fix --allow-dirty --allow-staged --workspace --features all -- && cargo fmt --all"

@@ -1,10 +1,12 @@
-use crate::bot::telegram::handlers::message::MessageHandler;
+use std::{process::exit, thread};
+
 use app_config::CONFIGURATION;
 use log::{debug, error, info, trace};
 use reqwest::Url;
-use std::{process::exit, thread};
 use teloxide::{prelude::*, types::Me, utils::command::BotCommands};
 use tokio::runtime;
+
+use crate::bot::telegram::handlers::message::MessageHandler;
 
 mod download_helper;
 mod handlers;
@@ -18,7 +20,8 @@ enum Command {
     #[command(description = "Display this help message")]
     Help,
     #[command(
-        description = "Split the video into scenes (best effort). Must be a reply to a video message or text of a video message."
+        description = "Split the video into scenes (best effort). Must be a reply to a video \
+                       message or text of a video message."
     )]
     SplitScenes,
 }

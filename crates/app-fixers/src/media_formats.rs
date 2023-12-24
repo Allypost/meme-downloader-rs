@@ -339,7 +339,8 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
             let extension_ok = path_has_extension(&file_path, "mp4");
 
             trace!(
-                "Video codec ok: {video_codec_ok:?} | Audio codec ok: {audio_codec_ok:?} | Extension ok: {extension_ok:?}",
+                "Video codec ok: {video_codec_ok:?} | Audio codec ok: {audio_codec_ok:?} | \
+                 Extension ok: {extension_ok:?}",
                 video_codec_ok = video_codec_ok,
                 audio_codec_ok = audio_codec_ok,
                 extension_ok = extension_ok,
@@ -408,7 +409,8 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
                     );
 
                     Err(format!(
-                        "File has an unknown color type ({color_type:?}), please report this issue to the developers.",
+                        "File has an unknown color type ({color_type:?}), please report this \
+                         issue to the developers.",
                         color_type = color_type,
                     ))
                 }
@@ -416,7 +418,11 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
                 (true, _color_type) => {
                     error!("Unsupported animated webp file {path:?}", path = from_path);
 
-                    Err("Animated webp files are not supported yet, please report this issue to the developers.".to_string())
+                    Err(
+                        "Animated webp files are not supported yet, please report this issue to \
+                         the developers."
+                            .to_string(),
+                    )
                 }
             }
         },

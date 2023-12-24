@@ -1,10 +1,12 @@
-use super::DownloaderReturn;
-use crate::downloaders::yt_dlp;
+use std::path::PathBuf;
+
 use app_config::CONFIG;
 use log::{debug, trace};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::path::PathBuf;
+
+use super::DownloaderReturn;
+use crate::downloaders::yt_dlp;
 
 pub static URL_MATCH: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^https?://(www\.)?twitter\.com/(?P<username>[^/]+)/status/(?P<status_id>[0-9]+)")

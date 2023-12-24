@@ -1,7 +1,4 @@
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::single_match_else)]
-#![allow(clippy::missing_errors_doc)]
+use std::{env, fs, path::PathBuf};
 
 use log::{debug, LevelFilter};
 use log4rs::{
@@ -13,7 +10,6 @@ use log4rs::{
     filter::threshold::ThresholdFilter,
 };
 use sanitize_filename::sanitize_with_options;
-use std::{env, fs, path::PathBuf};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LoggerConfigBuilder<'a> {

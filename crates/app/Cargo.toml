@@ -26,3 +26,6 @@ bots = ["telegram-bot", "dep:tokio"]
 ask-for-url = ["atty"]
 desktop-notifications = ["dep:notify-rust"]
 telegram-bot = ["app-config/telegram-bot", "app-bots/telegram"]
+
+[lints]
+workspace = true

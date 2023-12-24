@@ -1,9 +1,11 @@
-use super::DownloaderReturn;
-use crate::downloaders::USER_AGENT;
+use std::{path::PathBuf, process};
+
 use app_config::CONFIGURATION;
 use app_helpers::id::time_id;
 use log::{debug, trace};
-use std::{path::PathBuf, process};
+
+use super::DownloaderReturn;
+use crate::downloaders::USER_AGENT;
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let yt_dlp = &CONFIGURATION.yt_dlp_path;

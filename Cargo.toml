@@ -9,6 +9,16 @@ authors = ["Allypost"]
 description = "A meme downloader"
 edition = "2021"
 
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+single_match_else = "allow"
+manual_let_else = "allow"
+uninlined_format_args = "allow"
+missing_panics_doc = "allow"
+missing_errors_doc = "allow"
+no_effect_underscore_binding = "allow"
+
 [profile.release]
 strip = true
 # opt-level = "s"

@@ -9,8 +9,8 @@ procs:
 
   format:
     autostart: false
-    shell: "cargo clippy --fix --allow-dirty --allow-staged --features all -- && cargo fmt"
+    shell: "cargo clippy --fix --allow-dirty --allow-staged --all-features -- && cargo fmt"
 
   format-dev:
     autostart: false
-    shell: "rustup run nightly cargo fmt --all && cargo clippy --fix --allow-dirty --allow-staged --workspace --features all -- && cargo fmt --all"
+    shell: "rustup run nightly cargo fmt --all && cargo clippy --fix --allow-dirty --allow-staged --workspace --all-features -- && cargo fmt --all"

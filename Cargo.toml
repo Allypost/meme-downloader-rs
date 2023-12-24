@@ -23,4 +23,4 @@ no_effect_underscore_binding = "allow"
 strip = true
 # opt-level = "s"
 lto = "thin"
-codegen-units = 1
+# codegen-units = 1

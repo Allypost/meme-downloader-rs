@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use config::CONFIG;
+use app_config::CONFIG;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error, fmt, io, num, path::Path, process, time};
 

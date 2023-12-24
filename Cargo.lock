@@ -88,6 +88,97 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c7d0618f0e0b7e8ff11427422b64564d5fb0be1940354bfe2e0529b18a9d9b8"
 
 [[package]]
+name = "app-bots"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "app-config",
+ "app-downloader",
+ "app-fixers",
+ "app-helpers",
+ "async-recursion",
+ "futures",
+ "infer",
+ "log",
+ "rayon",
+ "reqwest",
+ "scopeguard",
+ "teloxide",
+ "tokio",
+]
+
+[[package]]
+name = "app-config"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "directories",
+ "lazy_static",
+ "resolve-path",
+ "serde",
+ "serde_json",
+ "toml",
+ "which",
+]
+
+[[package]]
+name = "app-downloader"
+version = "0.3.1"
+dependencies = [
+ "app-config",
+ "app-fixers",
+ "app-helpers",
+ "log",
+ "once_cell",
+ "rayon",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "app-fixers"
+version = "0.3.0"
+dependencies = [
+ "app-config",
+ "app-helpers",
+ "filetime",
+ "fs_extra",
+ "image",
+ "infer",
+ "log",
+ "rayon",
+ "resolve-path",
+ "scopeguard",
+]
+
+[[package]]
+name = "app-helpers"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "app-config",
+ "base64",
+ "log",
+ "serde",
+ "serde_json",
+ "trash",
+]
+
+[[package]]
+name = "app-logger"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "log4rs",
+ "sanitize-filename",
+]
+
+[[package]]
 name = "aquamarine"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -295,26 +386,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bots"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "async-recursion",
- "config",
- "downloader",
- "fixers",
- "futures",
- "helpers",
- "infer",
- "log",
- "rayon",
- "reqwest",
- "scopeguard",
- "teloxide",
- "tokio",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -437,21 +508,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62ec6771ecfa0762d24683ee5a32ad78487a3d3afdc0fb8cae19d2c5deb50b7c"
 dependencies = [
  "crossbeam-utils",
-]
-
-[[package]]
-name = "config"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "clap",
- "directories",
- "lazy_static",
- "resolve-path",
- "serde",
- "serde_json",
- "toml",
- "which",
 ]
 
 [[package]]
@@ -681,23 +737,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "downloader"
-version = "0.3.1"
-dependencies = [
- "config",
- "fixers",
- "helpers",
- "log",
- "once_cell",
- "rayon",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "url",
-]
-
-[[package]]
 name = "dptree"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -829,22 +868,6 @@ dependencies = [
  "libc",
  "redox_syscall 0.2.16",
  "windows-sys",
-]
-
-[[package]]
-name = "fixers"
-version = "0.3.0"
-dependencies = [
- "config",
- "filetime",
- "fs_extra",
- "helpers",
- "image",
- "infer",
- "log",
- "rayon",
- "resolve-path",
- "scopeguard",
 ]
 
 [[package]]
@@ -1082,19 +1105,6 @@ name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
-
-[[package]]
-name = "helpers"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "base64",
- "config",
- "log",
- "serde",
- "serde_json",
- "trash",
-]
 
 [[package]]
 name = "hermit-abi"
@@ -1443,16 +1453,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "logger"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "log",
- "log4rs",
- "sanitize-filename",
-]
-
-[[package]]
 name = "mac-notification-sys"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1485,13 +1485,13 @@ name = "meme-downloader"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "app-bots",
+ "app-config",
+ "app-downloader",
+ "app-fixers",
+ "app-logger",
  "atty",
- "bots",
- "config",
- "downloader",
- "fixers",
  "log",
- "logger",
  "notify-rust",
  "tokio",
 ]

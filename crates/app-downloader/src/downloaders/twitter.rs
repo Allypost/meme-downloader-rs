@@ -1,6 +1,6 @@
 use super::DownloaderReturn;
 use crate::downloaders::yt_dlp;
-use config::CONFIG;
+use app_config::CONFIG;
 use log::{debug, trace};
 use once_cell::sync::Lazy;
 use regex::Regex;

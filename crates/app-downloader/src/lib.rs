@@ -46,7 +46,7 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
 
     debug!("Downloaded files: {:?}", &new_file_paths);
 
-    let new_file_paths = fixers::fix_files(&new_file_paths)?;
+    let new_file_paths = app_fixers::fix_files(&new_file_paths)?;
 
     Ok(new_file_paths)
 }

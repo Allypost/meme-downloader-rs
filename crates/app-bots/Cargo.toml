@@ -1,16 +1,16 @@
 [package]
-name = "bots"
+name = "app-bots"
 version = "0.3.0"
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
 async-recursion = "1.0.4"
-config = { version = "*", path = "../config" }
-downloader = { version = "*", path = "../downloader" }
-fixers = { version = "0.3.0", path = "../fixers" }
+app-config = { version = "*", path = "../app-config" }
+app-downloader = { version = "*", path = "../app-downloader" }
+app-fixers = { version = "*", path = "../app-fixers" }
 futures = "0.3.28"
-helpers = { version = "*", path = "../helpers" }
+app-helpers = { version = "*", path = "../app-helpers" }
 infer = "0.13.0"
 log = "0.4.19"
 rayon = "1.7.0"
@@ -23,4 +23,4 @@ teloxide = { optional = true, version = "0.12.2", default-features = false, feat
 tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-telegram = ["config/telegram-bot", "dep:teloxide"]
+telegram = ["app-config/telegram-bot", "dep:teloxide"]

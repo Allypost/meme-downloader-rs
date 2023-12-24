@@ -3,8 +3,8 @@ use std::{
     process::Command,
 };
 
-use config::CONFIGURATION;
-use helpers::dirs::create_temp_dir;
+use app_config::CONFIGURATION;
+use app_helpers::dirs::create_temp_dir;
 
 pub fn split_video_into_scenes(file_path: &Path) -> Result<Vec<PathBuf>, String> {
     let tmp_dir = create_temp_dir().map_err(|e| format!("Error while getting temp dir: {e:?}"))?;

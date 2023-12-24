@@ -1,5 +1,5 @@
-use config::CONFIGURATION;
-use helpers::dirs::create_temp_dir;
+use app_config::CONFIGURATION;
+use app_helpers::dirs::create_temp_dir;
 use log::trace;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{fs, path::PathBuf};
@@ -47,7 +47,7 @@ pub fn download_tmp_file(url: &str) -> Result<DownloadResult, String> {
     let download_dir =
         create_temp_dir().map_err(|e| format!("Error while getting temp dir: {e:?}"))?;
     trace!("Downloading to temp dir: {:?}", &download_dir);
-    let files = downloader::download_file(url, &download_dir)?;
+    let files = app_downloader::download_file(url, &download_dir)?;
 
     Ok(DownloadResult {
         download_dir,

@@ -1,5 +1,5 @@
 use crate::bot::telegram::handlers::message::MessageHandler;
-use config::CONFIGURATION;
+use app_config::CONFIGURATION;
 use log::{debug, error, info, trace};
 use reqwest::Url;
 use std::{process::exit, thread};

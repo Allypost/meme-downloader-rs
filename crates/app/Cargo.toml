@@ -6,12 +6,12 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.71"
 atty = { version = "0.2.14", optional = true }
-bots = { version = "*", path = "../bots" }
-config = { version = "*", path = "../config" }
-downloader = { version = "*", path = "../downloader" }
-fixers = { version = "*", path = "../fixers" }
+app-bots = { version = "*", path = "../app-bots" }
+app-config = { version = "*", path = "../app-config" }
+app-downloader = { version = "*", path = "../app-downloader" }
+app-fixers = { version = "*", path = "../app-fixers" }
+app-logger = { version = "*", path = "../app-logger" }
 log = "0.4.19"
-logger = { version = "*", path = "../logger" }
 notify-rust = { version = "4.8.0", optional = true, features = ["images"] }
 tokio = { version = "1.28.2", features = [
   "rt-multi-thread",
@@ -25,4 +25,4 @@ all = ["desktop-notifications", "bots", "ask-for-url"]
 bots = ["telegram-bot", "dep:tokio"]
 ask-for-url = ["atty"]
 desktop-notifications = ["dep:notify-rust"]
-telegram-bot = ["config/telegram-bot", "bots/telegram"]
+telegram-bot = ["app-config/telegram-bot", "app-bots/telegram"]

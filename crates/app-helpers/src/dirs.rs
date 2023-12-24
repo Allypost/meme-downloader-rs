@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::anyhow;
-use config::CONFIGURATION;
+use app_config::CONFIGURATION;
 
 use crate::id::time_thread_id;
 

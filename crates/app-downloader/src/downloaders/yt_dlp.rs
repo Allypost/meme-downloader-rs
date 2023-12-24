@@ -1,7 +1,7 @@
 use super::DownloaderReturn;
 use crate::downloaders::USER_AGENT;
-use config::CONFIGURATION;
-use helpers::id::time_id;
+use app_config::CONFIGURATION;
+use app_helpers::id::time_id;
 use log::{debug, trace};
 use std::{path::PathBuf, process};
 

@@ -8,10 +8,10 @@ use crate::bot::telegram::{
     Command,
 };
 use anyhow::anyhow;
+use app_config::CONFIGURATION;
+use app_helpers::{dirs::create_temp_dir, id::time_id, results::option_contains};
 use async_recursion::async_recursion;
-use config::CONFIGURATION;
 use futures::{self};
-use helpers::{dirs::create_temp_dir, id::time_id, results::option_contains};
 use log::{debug, error, info, trace};
 use rayon::{
     prelude::{IntoParallelRefIterator, ParallelIterator},
@@ -337,7 +337,7 @@ impl<'a> MessageHandler<'a> {
             let download_file_path = download_file_path.clone();
 
             tokio::task::spawn_blocking(move || {
-                fixers::fix_files(&[download_file_path.clone()])
+                app_fixers::fix_files(&[download_file_path.clone()])
                     .map_err(|e| format!("Error while fixing file: {e:?}"))
             })
             .await
@@ -412,8 +412,8 @@ async fn split_msg_video(
         let download_dir = download_dir.clone();
 
         let mut scene_files = tokio::task::spawn_blocking(move || {
-            fixers::split_scenes::split_into_scenes(
-                fixers::split_scenes::SplitVideoConfig::new(&download_dir, &download_file_path)
+            app_fixers::split_scenes::split_into_scenes(
+                app_fixers::split_scenes::SplitVideoConfig::new(&download_dir, &download_file_path)
                     .with_file_template("0.$SCENE_NUMBER.$START_FRAME-$END_FRAME"),
             )
         })

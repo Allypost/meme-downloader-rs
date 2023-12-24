@@ -4,8 +4,8 @@ use std::{
     process,
 };
 
-use config::CONFIG;
-use helpers::{
+use app_config::CONFIG;
+use app_helpers::{
     ffprobe::{self, FfProbeResult, Stream},
     id::time_thread_id,
     trash::move_to_trash,

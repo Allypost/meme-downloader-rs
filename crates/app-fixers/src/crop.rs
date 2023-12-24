@@ -1,8 +1,8 @@
 use crate::util::transfer_file_times;
 
 use super::FixerReturn;
-use config::CONFIGURATION;
-use helpers::{ffprobe, results::option_contains, trash::move_to_trash};
+use app_config::CONFIGURATION;
+use app_helpers::{ffprobe, results::option_contains, trash::move_to_trash};
 use log::{debug, trace};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{ffi::OsStr, fmt::Display, path::PathBuf, process};

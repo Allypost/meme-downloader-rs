@@ -7,9 +7,9 @@
 
 use std::{fs, path::PathBuf, process::exit};
 
-use config::{APPLICATION_NAME, CONFIG};
+use app_config::{APPLICATION_NAME, CONFIG};
+use app_logger::LoggerConfig;
 use log::{error, info, trace};
-use logger::LoggerConfig;
 
 #[cfg(feature = "desktop-notifications")]
 mod notif;
@@ -17,7 +17,7 @@ mod notif;
 fn main() {
     #[cfg(feature = "telegram-bot")]
     {
-        if let Some(config::RunAsBot::Telegram) = CONFIG.run.run_as_bot {
+        if let Some(app_config::RunAsBot::Telegram) = CONFIG.run.run_as_bot {
             run_telegram_bot();
         }
     }
@@ -34,7 +34,7 @@ fn main() {
         exit(1);
     }
 
-    if logger::init(
+    if app_logger::init(
         LoggerConfig::builder()
             .program_name(APPLICATION_NAME)
             .name_suffix(&download_url),
@@ -52,7 +52,7 @@ fn main() {
 
         info!("Fixing file: {:?}", &file_path);
 
-        fixers::fix_files(&[file_path]).unwrap_or_else(|e| {
+        app_fixers::fix_files(&[file_path]).unwrap_or_else(|e| {
             error!("Error fixing file: {:?}", e);
             exit(1);
         });
@@ -70,7 +70,7 @@ fn main() {
     }
     trace!("Meme dir: {meme_dir:?}");
 
-    match downloader::download_file(&download_url, &meme_dir) {
+    match app_downloader::download_file(&download_url, &meme_dir) {
         Ok(paths) => {
             info!(
                 "Downloaded file(s): {}",
@@ -123,7 +123,7 @@ fn main() {
 
 #[cfg(feature = "telegram-bot")]
 fn run_telegram_bot() {
-    if logger::init(
+    if app_logger::init(
         LoggerConfig::builder()
             .program_name(APPLICATION_NAME)
             .name_suffix("telegram-bot")
@@ -149,7 +149,7 @@ fn run_telegram_bot() {
         .enable_all()
         .build()
         .unwrap()
-        .block_on(bots::bot::telegram::run());
+        .block_on(app_bots::bot::telegram::run());
 
     info!("Telegram bot stopped");
     exit(0);

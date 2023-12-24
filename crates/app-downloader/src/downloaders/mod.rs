@@ -1,5 +1,6 @@
 use std::{path::PathBuf, result::Result};
 
+pub mod generic;
 pub mod instagram;
 pub mod mastodon;
 pub mod tumblr;

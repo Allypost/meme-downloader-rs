@@ -5,7 +5,7 @@ use app_helpers::id::time_id;
 use log::{debug, trace};
 
 use super::DownloaderReturn;
-use crate::downloaders::USER_AGENT;
+use crate::downloaders::{generic, USER_AGENT};
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let yt_dlp = &CONFIGURATION.yt_dlp_path;
@@ -44,6 +44,11 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
                 Err("yt-dlp finished but file does not exist.")
             }
         }
+        Ok(process::Output {
+            stdout: _,
+            stderr,
+            status: _,
+        }) if is_image_error(stderr.clone()) => return generic::download(download_dir, url),
         _ => {
             let msg = format!("yt-dlp failed downloading meme: {cmd_output:?}");
             err.push_str(msg.as_str());
@@ -63,4 +68,13 @@ fn get_output_template<S: Into<PathBuf>>(download_dir: S) -> PathBuf {
     let file_name = format!("{file_identifier}.%(id).64s.%(ext)s");
 
     download_dir.into().join(file_name)
+}
+
+fn is_image_error(output: Vec<u8>) -> bool {
+    let output = String::from_utf8(output).unwrap_or_default();
+    let output = output.trim();
+
+    trace!("yt-dlp output: {output}");
+
+    output.ends_with(". Maybe an image?")
 }

@@ -130,6 +130,7 @@ dependencies = [
  "app-fixers",
  "app-helpers",
  "log",
+ "mime_guess",
  "once_cell",
  "rayon",
  "regex",

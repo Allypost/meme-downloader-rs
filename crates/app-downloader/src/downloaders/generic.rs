@@ -1,10 +1,14 @@
-use std::{fs::File, path::PathBuf};
+use std::{ffi::OsString, fs::File, path::PathBuf, string::ToString};
 
 use app_helpers::id::time_id;
 use reqwest::blocking::Client;
+use unicode_segmentation::UnicodeSegmentation;
+use url::Url;
 
 use super::DownloaderReturn;
 use crate::downloaders::USER_AGENT;
+
+pub const MAX_FILENAME_LENGTH: usize = 120;
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     app_logger::info!("Downloading {:?} to {:?}", url, download_dir);
@@ -31,11 +35,40 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         .and_then(|x| x.first())
         .map_or("unknown".to_string(), |x| (*x).to_string());
 
-    let file_name = format!(
-        "{}.{}",
-        time_id().map_err(|e| { format!("Failed to get time id: {:?}", e) })?,
-        extension
-    );
+    let id = time_id().map_err(|e| format!("Failed to get time id: {:?}", e))?;
+    let mut file_name = OsString::from(&id);
+
+    let taken_filename_len = id.len() + 1 + extension.len();
+
+    let url_file_name = Url::parse(url)
+        .ok()
+        .map(|x| PathBuf::from(x.path()))
+        .and_then(|x| {
+            let stem = x.file_stem()?;
+
+            let trunc = stem
+                .to_string_lossy()
+                .graphemes(true)
+                .filter(|x| !x.chars().all(char::is_control))
+                .filter(|x| !x.contains(['\\', '/', ':', '*', '?', '"', '<', '>', '|']))
+                .take(MAX_FILENAME_LENGTH - 1 - taken_filename_len)
+                .collect::<String>();
+
+            if trunc.is_empty() {
+                None
+            } else {
+                Some(trunc)
+            }
+        });
+
+    if let Some(url_file_name) = url_file_name {
+        app_logger::trace!("Got url file name: {:?}", url_file_name);
+        file_name.push(".");
+        file_name.push(url_file_name);
+    }
+
+    file_name.push(".");
+    file_name.push(extension);
 
     let file_path = download_dir.join(file_name);
     app_logger::debug!("Writing to file: {:?}", &file_path);

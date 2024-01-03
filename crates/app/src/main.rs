@@ -6,6 +6,7 @@ use app_logger::{error, info, trace, LoggerConfig};
 #[cfg(feature = "desktop-notifications")]
 mod notif;
 
+#[allow(clippy::too_many_lines)]
 fn main() {
     #[cfg(feature = "telegram-bot")]
     {
@@ -42,14 +43,57 @@ fn main() {
     if CONFIG.run.fix {
         let file_path = PathBuf::from(&download_url);
 
+        #[cfg(feature = "desktop-notifications")]
+        {
+            let _ = notif::send_notification(&notif::NotificationInfo {
+                urgency: notify_rust::Urgency::Normal,
+                timeout: notify_rust::Timeout::Milliseconds(5_000),
+                icon: "info".to_string(),
+                title: "Starting file fix".to_string(),
+                message: format!("Fixing file: {}", &download_url),
+            });
+        }
+
         info!("Fixing file: {:?}", &file_path);
 
         app_fixers::fix_files(&[file_path]).unwrap_or_else(|e| {
+            #[cfg(feature = "desktop-notifications")]
+            {
+                let _ = notif::send_notification(&notif::NotificationInfo {
+                    urgency: notify_rust::Urgency::Normal,
+                    timeout: notify_rust::Timeout::Milliseconds(5_000),
+                    icon: "error".to_string(),
+                    title: "Failed to fix file".to_string(),
+                    message: format!("Failed to fix file: {}", &download_url),
+                });
+            }
             error!("Error fixing file: {:?}", e);
             exit(1);
         });
 
+        #[cfg(feature = "desktop-notifications")]
+        {
+            let _ = notif::send_notification(&notif::NotificationInfo {
+                urgency: notify_rust::Urgency::Normal,
+                timeout: notify_rust::Timeout::Milliseconds(5_000),
+                icon: "success".to_string(),
+                title: "Successfully fixed file".to_string(),
+                message: format!("Done fixing file: {}", &download_url),
+            });
+        }
+
         return;
+    }
+
+    #[cfg(feature = "desktop-notifications")]
+    {
+        let _ = notif::send_notification(&notif::NotificationInfo {
+            urgency: notify_rust::Urgency::Normal,
+            timeout: notify_rust::Timeout::Milliseconds(5_000),
+            icon: "info".to_string(),
+            title: "Starting download".to_string(),
+            message: format!("Starting download of file: {}", &download_url),
+        });
     }
 
     let meme_dir = CONFIG.app.memes_directory.clone();

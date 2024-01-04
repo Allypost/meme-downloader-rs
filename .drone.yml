@@ -23,7 +23,7 @@ steps:
       - docker build --pull --compress --label "net.allypost.meme-downloader=true" --tag "$_DOCKER_BUILD_IMAGE":latest --tag "$_DOCKER_BUILD_IMAGE":"${DRONE_COMMIT_SHA}" --file ./.docker/app/Dockerfile .
       - docker login -u "$_DOCKER_USERNAME" -p "$_DOCKER_PASSWORD"
       - docker push --all-tags "$_DOCKER_BUILD_IMAGE"
-      - docker image rm "$_DOCKER_BUILD_IMAGE:${DRONE_COMMIT_SHA}" "$_DOCKER_BUILD_IMAGE:latest"
+      - docker image rm "$_DOCKER_BUILD_IMAGE:${DRONE_COMMIT_SHA}"
     volumes:
       - name: docker
         path: /var/run/docker.sock

@@ -93,6 +93,7 @@ impl TelegramBotConfig {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Args)]
+#[allow(clippy::struct_field_names)]
 pub struct ProgramPathConfig {
     #[arg(long, default_value = None, env = "MEME_DOWNLOADER_YT_DLP", value_hint = ValueHint::FilePath)]
     /// Path to the yt-dlp executable.

@@ -89,7 +89,8 @@ fn fetch_instagram_urls(url: &str) -> Result<Vec<String>, String> {
 
     if !edges.contains_key("edge_sidecar_to_children") {
         let url = edges
-            .get("display_url")
+            .get("video_url")
+            .or_else(|| edges.get("display_url"))
             .and_then(serde_json::Value::as_str)
             .map(string::ToString::to_string)
             .ok_or("Failed to get `display_url' on edges")?;

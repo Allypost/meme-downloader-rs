@@ -3,7 +3,7 @@ use std::{env, path::PathBuf};
 use app_logger::{debug, info};
 use downloaders::{instagram, mastodon, reddit, tumblr, twitter, yt_dlp};
 
-use crate::downloaders::generic;
+use crate::downloaders::{generic, imgur};
 
 mod downloaders;
 
@@ -36,6 +36,14 @@ pub fn download_file(url: &str, download_dir: &PathBuf) -> Result<Vec<PathBuf>, 
         reddit_image_url if reddit::is_reddit_image_url(url) => {
             debug!("Found URL is reddit image. Downloading...");
             generic::download(download_dir, reddit_image_url)?
+        }
+        imgur_media_url if imgur::is_imgur_direct_media_url(url) => {
+            debug!("Found URL is imgur direct media. Downloading...");
+            generic::download(download_dir, imgur_media_url)?
+        }
+        imgur_post_url if imgur::is_imgur_url(url) => {
+            debug!("Found URL is imgur post. Downloading...");
+            imgur::download(download_dir, imgur_post_url)?
         }
         _ => {
             debug!("Trying to download with yt-dlp...");

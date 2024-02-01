@@ -25,6 +25,7 @@ app-config = { version = "*", path = "../app-config" }
 app-helpers = { version = "*", path = "../app-helpers" }
 mime_guess = "2.0.4"
 unicode-segmentation = "1.10.1"
+tl = "0.7.8"
 
 [lints]
 workspace = true

@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{env, fs, path::PathBuf, string::ToString};
 
 pub use log::{debug, error, info, trace, warn, LevelFilter};
 use log4rs::{
@@ -23,31 +23,31 @@ impl<'a> LoggerConfigBuilder<'a> {
     }
 
     #[must_use]
-    pub fn name_suffix(mut self, name_suffix: &'a str) -> Self {
+    pub const fn name_suffix(mut self, name_suffix: &'a str) -> Self {
         self.config.name_suffix = Some(name_suffix);
         self
     }
 
     #[must_use]
-    pub fn program_name(mut self, program_name: &'a str) -> Self {
+    pub const fn program_name(mut self, program_name: &'a str) -> Self {
         self.config.program_name = Some(program_name);
         self
     }
 
     #[must_use]
-    pub fn file_log_level(mut self, log_level: LevelFilter) -> Self {
+    pub const fn file_log_level(mut self, log_level: LevelFilter) -> Self {
         self.config.file_log_level = Some(log_level);
         self
     }
 
     #[must_use]
-    pub fn stdout_log_level(mut self, log_level: LevelFilter) -> Self {
+    pub const fn stdout_log_level(mut self, log_level: LevelFilter) -> Self {
         self.config.stdout_log_level = Some(log_level);
         self
     }
 
     #[must_use]
-    pub fn build(self) -> LoggerConfig<'a> {
+    pub const fn build(self) -> LoggerConfig<'a> {
         self.config
     }
 }
@@ -124,11 +124,9 @@ pub fn init<'a, T: Into<LoggerConfig<'a>>>(cfg: T) -> anyhow::Result<log4rs::Han
 }
 
 fn get_tmp_file(config: &LoggerConfig) -> PathBuf {
-    let program_name = if let Some(name) = config.program_name {
-        name.to_string()
-    } else {
-        env!("CARGO_PKG_NAME").to_string()
-    };
+    let program_name = config
+        .program_name
+        .map_or_else(|| env!("CARGO_PKG_NAME").to_string(), ToString::to_string);
 
     let mut tmp_file = program_name;
 

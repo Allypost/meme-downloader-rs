@@ -10,17 +10,18 @@ mod notif;
 fn main() {
     #[cfg(feature = "telegram-bot")]
     {
-        if let Some(app_config::RunAsBot::Telegram) = CONFIG.run.run_as_bot {
+        if matches!(CONFIG.run.run_as_bot, Some(app_config::RunAsBot::Telegram)) {
             run_telegram_bot();
         }
     }
 
-    let download_url = if let Ok(url) = get_download_url() {
-        url
-    } else {
-        eprintln!("Failed to get download URL.");
-        exit(1);
-    };
+    let download_url = get_download_url().map_or_else(
+        |_| {
+            eprintln!("Failed to get download URL.");
+            exit(1);
+        },
+        |url| url,
+    );
 
     if download_url.is_empty() {
         eprintln!("No download URL provided. Please provide one.");

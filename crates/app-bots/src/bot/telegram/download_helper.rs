@@ -12,7 +12,7 @@ pub struct DownloadResult {
 }
 
 impl DownloadResult {
-    pub fn files(&self) -> &Vec<PathBuf> {
+    pub const fn files(&self) -> &Vec<PathBuf> {
         &self.files
     }
 

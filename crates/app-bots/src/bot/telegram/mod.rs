@@ -42,7 +42,7 @@ pub async fn run() {
         .telegram
         .as_ref()
         .and_then(|x| x.api_url.clone())
-        .unwrap_or("https://api.telegram.org".to_string());
+        .unwrap_or_else(|| "https://api.telegram.org".to_string());
 
     trace!("Trying Telegram API URL: {}", bot_api_url);
 

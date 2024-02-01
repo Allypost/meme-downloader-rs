@@ -60,7 +60,7 @@ pub struct Config {
 impl Config {
     /// Construct a new `ConfigBuilder`.
     #[must_use]
-    pub fn builder() -> ConfigBuilder {
+    pub const fn builder() -> ConfigBuilder {
         ConfigBuilder::new()
     }
 }
@@ -72,7 +72,7 @@ pub struct ConfigBuilder {
 
 impl ConfigBuilder {
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             config: Config {
                 count_frames: false,
@@ -84,14 +84,14 @@ impl ConfigBuilder {
     /// Will fully decode the file and count the frames.
     /// Frame count will be available in [`Stream::nb_read_frames`].
     #[must_use]
-    pub fn count_frames(mut self, count_frames: bool) -> Self {
+    pub const fn count_frames(mut self, count_frames: bool) -> Self {
         self.config.count_frames = count_frames;
         self
     }
 
     /// Finalize the builder into a [`Config`].
     #[must_use]
-    pub fn build(self) -> Config {
+    pub const fn build(self) -> Config {
         self.config
     }
 
@@ -119,8 +119,8 @@ pub enum FfProbeError {
 impl fmt::Display for FfProbeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FfProbeError::Io(e) => e.fmt(f),
-            FfProbeError::Status(o) => {
+            Self::Io(e) => e.fmt(f),
+            Self::Status(o) => {
                 write!(
                     f,
                     "ffprobe exited with status code {}: {}",
@@ -128,8 +128,8 @@ impl fmt::Display for FfProbeError {
                     String::from_utf8_lossy(&o.stderr)
                 )
             }
-            FfProbeError::Deserialize(e) => e.fmt(f),
-            FfProbeError::MissingBinary(e) => write!(f, "Missing binary: {e}"),
+            Self::Deserialize(e) => e.fmt(f),
+            Self::MissingBinary(e) => write!(f, "Missing binary: {e}"),
         }
     }
 }

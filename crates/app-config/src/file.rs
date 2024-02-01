@@ -39,7 +39,7 @@ pub struct OldFileConfiguration {
 }
 impl From<OldFileConfiguration> for FileConfiguration {
     fn from(val: OldFileConfiguration) -> Self {
-        FileConfiguration {
+        Self {
             app: val.memes_directory.map(|x| AppConfig {
                 memes_directory: Some(x),
             }),
@@ -249,7 +249,7 @@ impl FileConfiguration {
             let config_file = fs::read_to_string(p).unwrap();
             let old_config =
                 toml::from_str::<OldFileConfiguration>(&config_file).unwrap_or_default();
-            let new_config = match toml::from_str::<FileConfiguration>(&config_file) {
+            let new_config = match toml::from_str::<Self>(&config_file) {
                 Ok(config) => config,
                 Err(e) => {
                     anyhow::bail!("Error parsing config file: {e}", e = e);

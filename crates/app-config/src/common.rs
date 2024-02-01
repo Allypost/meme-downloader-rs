@@ -32,14 +32,13 @@ impl BotConfig {
         #[cfg(feature = "telegram-bot")]
         {
             if let Some(telegram) = config.telegram.as_ref() {
-                let merged = self
-                    .telegram
-                    .as_mut()
-                    .map(|x| {
+                let merged = self.telegram.as_mut().map_or_else(
+                    || telegram.clone(),
+                    |x| {
                         x.merge(telegram);
                         x.clone()
-                    })
-                    .unwrap_or(telegram.clone());
+                    },
+                );
 
                 self.telegram = Some(merged);
             }
@@ -144,7 +143,6 @@ impl ProgramPathConfig {
 const DEFAULT_TWITTER_SCREENSHOT_BASE_URL: &str = "https://twitter.igr.ec";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Args)]
-
 pub struct EndpointConfig {
     #[arg(long, default_value = None, env = "MEME_DOWNLOADER_ENDPOINT_TWITTER_SCREENSHOT", value_hint = ValueHint::Url)]
     /// The base URL for the Twitter screenshot API.

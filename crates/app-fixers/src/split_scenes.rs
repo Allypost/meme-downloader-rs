@@ -21,7 +21,7 @@ pub struct SplitVideoConfig<'a> {
 
 impl<'a> SplitVideoConfig<'a> {
     #[must_use]
-    pub fn new(download_dir: &'a Path, file_path: &'a Path) -> Self {
+    pub const fn new(download_dir: &'a Path, file_path: &'a Path) -> Self {
         Self {
             download_dir,
             file_path,

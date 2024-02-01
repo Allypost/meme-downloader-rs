@@ -28,8 +28,5 @@ pub fn check_results<TVal: Debug, TErr: Display>(
 }
 
 pub fn option_contains<T: Eq>(option: &Option<T>, contains: &T) -> bool {
-    match option {
-        Some(value) => contains == value,
-        None => false,
-    }
+    option.as_ref().map_or(false, |value| contains == value)
 }

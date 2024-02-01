@@ -90,22 +90,22 @@ impl TranscodeInfo {
         }
     }
 
-    fn with_extension(mut self, extension: &'static str) -> Self {
+    const fn with_extension(mut self, extension: &'static str) -> Self {
         self.extension = extension;
         self
     }
 
-    fn with_video_codec(mut self, video_codec: &'static str) -> Self {
+    const fn with_video_codec(mut self, video_codec: &'static str) -> Self {
         self.video_codec = video_codec;
         self
     }
 
-    fn with_audio_codec(mut self, audio_codec: &'static str) -> Self {
+    const fn with_audio_codec(mut self, audio_codec: &'static str) -> Self {
         self.audio_codec = Some(audio_codec);
         self
     }
 
-    fn without_audio(mut self) -> Self {
+    const fn without_audio(mut self) -> Self {
         self.audio_codec = None;
         self
     }
@@ -279,7 +279,7 @@ fn copy_file_to_cache_folder(file_path: &Path) -> Result<(PathBuf, PathBuf), Str
         )
     })?;
 
-    Ok((cache_folder.clone(), cache_file_path))
+    Ok((cache_folder, cache_file_path))
 }
 
 fn path_has_extension(path: &Path, wanted_extension: &str) -> bool {
@@ -325,16 +325,13 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
                 .as_ref()
                 .map_or(false, |vcodec| vcodec == "h264");
 
-            let audio_codec_ok = {
-                if let Some(audio_stream) = get_stream_of_type(file_format_info, "audio") {
+            let audio_codec_ok =
+                get_stream_of_type(file_format_info, "audio").map_or(true, |audio_stream| {
                     audio_stream
                         .codec_name
                         .as_ref()
                         .map_or(false, |acodec| acodec == "aac")
-                } else {
-                    true
-                }
-            };
+                });
 
             let extension_ok = path_has_extension(&file_path, "mp4");
 

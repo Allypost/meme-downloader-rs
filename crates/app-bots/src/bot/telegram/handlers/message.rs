@@ -200,12 +200,8 @@ impl<'a> MessageHandler<'a> {
                 self.edit_message(&status_msg, "Downloaded files. Uploading here...")
                     .await?;
 
-                let files = files_to_input_media(
-                    download_results
-                        .iter()
-                        .flat_map(DownloadResult::files)
-                        .collect::<Vec<_>>(),
-                );
+                let files =
+                    files_to_input_media(download_results.iter().flat_map(DownloadResult::files));
 
                 self.bot
                     .send_media_group(self.msg.chat.id, files)
@@ -342,7 +338,7 @@ impl<'a> MessageHandler<'a> {
             let download_file_path = download_file_path.clone();
 
             tokio::task::spawn_blocking(move || {
-                app_fixers::fix_files(&[download_file_path.clone()])
+                app_fixers::fix_files(&[download_file_path])
                     .map_err(|e| format!("Error while fixing file: {e:?}"))
             })
             .await

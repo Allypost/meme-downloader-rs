@@ -31,9 +31,11 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         Some(Ok(mime_type)) => mime_type,
         _ => "",
     };
-    let extension = mime_guess::get_mime_extensions_str(mime_type)
-        .and_then(|x| x.first())
-        .map_or("unknown".to_string(), |x| (*x).to_string());
+
+    let extension =
+        mime2ext::mime2ext(mime_type).map_or("unknown".to_string(), |x| (*x).to_string());
+
+    app_logger::debug!("Got extension: {:?}", extension);
 
     let id = time_id().map_err(|e| format!("Failed to get time id: {:?}", e))?;
     let mut file_name = OsString::from(&id);

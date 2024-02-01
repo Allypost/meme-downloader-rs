@@ -23,9 +23,9 @@ reqwest = { version = "0.11.14", default-features = false, features = [
 url = "2.4.0"
 app-config = { version = "*", path = "../app-config" }
 app-helpers = { version = "*", path = "../app-helpers" }
-mime_guess = "2.0.4"
 unicode-segmentation = "1.10.1"
 tl = "0.7.8"
+mime2ext = "0.1.52"
 
 [lints]
 workspace = true

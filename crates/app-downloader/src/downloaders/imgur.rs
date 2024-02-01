@@ -1,11 +1,11 @@
+use std::{path::PathBuf, string::ToString, time::Duration};
+
 use rayon::prelude::*;
 use reqwest::blocking::{Client, Response};
 use serde::Deserialize;
-use std::{path::PathBuf, string::ToString, time::Duration};
-
-use crate::downloaders::{generic, USER_AGENT};
 
 use super::DownloaderReturn;
+use crate::downloaders::{generic, USER_AGENT};
 
 pub fn is_imgur_direct_media_url(url: &str) -> bool {
     url.starts_with("https://i.imgur.com/")

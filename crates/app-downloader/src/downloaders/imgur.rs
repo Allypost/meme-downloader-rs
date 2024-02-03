@@ -1,11 +1,11 @@
-use std::{path::PathBuf, string::ToString, time::Duration};
+use std::{path::PathBuf, string::ToString};
 
 use rayon::prelude::*;
-use reqwest::blocking::{Client, Response};
+use reqwest::blocking::Response;
 use serde::Deserialize;
 
 use super::DownloaderReturn;
-use crate::downloaders::{generic, USER_AGENT};
+use crate::downloaders::{common::request::Client, generic};
 
 pub fn is_imgur_direct_media_url(url: &str) -> bool {
     url.starts_with("https://i.imgur.com/")
@@ -32,13 +32,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         download_dir
     );
 
-    let client = Client::builder()
-        .user_agent(USER_AGENT)
-        .timeout(Duration::from_secs(5))
-        .build()
-        .map_err(|e| format!("Failed to create client: {:?}", e))?;
-
-    let resp = client
+    let resp = Client::default()?
         .get(url)
         .send()
         .and_then(Response::text)

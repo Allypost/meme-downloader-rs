@@ -1,10 +1,11 @@
 use std::{path::PathBuf, time::Duration};
 
-use app_logger::{debug, trace};
+use app_logger::{debug, trace, warn};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
 use super::{twitter, DownloaderReturn};
+use crate::downloaders::common::request::Client;
 
 pub static IS_NUMBERS_ONLY: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+$").unwrap());
 
@@ -31,7 +32,14 @@ pub fn is_mastodon_toot(toot_url: &str) -> bool {
 
     trace!("Making request to instance {mastodon_host:?} for status info for {toot_id:?}");
 
-    let client = reqwest::blocking::Client::new();
+    let client = match Client::default() {
+        Ok(client) => client,
+        Err(e) => {
+            warn!("Failed to create client: {e:?}");
+            return false;
+        }
+    };
+
     let result = client
         .get(api_url)
         .timeout(Duration::from_secs(5))

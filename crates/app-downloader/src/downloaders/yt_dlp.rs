@@ -5,7 +5,7 @@ use app_helpers::id::time_id;
 use app_logger::{debug, trace};
 
 use super::DownloaderReturn;
-use crate::downloaders::{generic, USER_AGENT};
+use crate::downloaders::{common::USER_AGENT, generic};
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let yt_dlp = &CONFIGURATION.yt_dlp_path;

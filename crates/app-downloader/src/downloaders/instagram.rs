@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use regex::Regex;
 
 use super::DownloaderReturn;
-use crate::downloaders::yt_dlp;
+use crate::downloaders::{common::request::Client, yt_dlp};
 
 pub static URL_MATCH: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^https?://(www\.)?instagram.com/p/(?P<post_id>[^/?]+)").unwrap());
@@ -58,8 +58,7 @@ fn fetch_instagram_urls(url: &str) -> Result<Vec<String>, String> {
 
         debug!("Fetching from instagram API url: {:?}", &api_url);
 
-        let client = reqwest::blocking::Client::new();
-        client
+        Client::default()?
             .get(&api_url)
             .send()
             .map_err(|e| format!("Failed to send request to instagram API: {e:?}"))?

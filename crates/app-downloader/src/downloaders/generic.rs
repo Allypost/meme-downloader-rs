@@ -1,24 +1,18 @@
 use std::{ffi::OsString, fs::File, path::PathBuf, string::ToString};
 
 use app_helpers::id::time_id;
-use reqwest::blocking::Client;
 use unicode_segmentation::UnicodeSegmentation;
 use url::Url;
 
 use super::DownloaderReturn;
-use crate::downloaders::USER_AGENT;
+use crate::downloaders::common::request::Client;
 
 pub const MAX_FILENAME_LENGTH: usize = 120;
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     app_logger::info!("Downloading {:?} to {:?}", url, download_dir);
 
-    let client = Client::builder()
-        .user_agent(USER_AGENT)
-        .build()
-        .map_err(|e| format!("Failed to create client: {:?}", e))?;
-
-    let mut res = client
+    let mut res = Client::default()?
         .get(url)
         .send()
         .map_err(|e| format!("Failed to send request: {:?}", e))?

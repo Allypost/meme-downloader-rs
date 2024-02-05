@@ -1,11 +1,15 @@
 procs:
   dev:
     autostart: false
-    shell: "cargo watch --clear --quiet --exec 'run --'"
+    shell: "cargo watch --clear --quiet --exec 'run --target x86_64-unknown-linux-musl --'"
+    env:
+      RUSTFLAGS: "-C target-feature=+crt-static"
 
   dev-bot:
     autostart: false
-    shell: "cargo watch --clear --quiet --exec 'run  --features bots -- --as-telegram-bot'"
+    shell: "cargo watch --clear --quiet --exec 'run --target x86_64-unknown-linux-musl --features bots -- --as-telegram-bot'"
+    env:
+      RUSTFLAGS: "-C target-feature=+crt-static"
 
   format:
     autostart: false

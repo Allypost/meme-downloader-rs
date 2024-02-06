@@ -305,8 +305,7 @@ impl<'a> MessageHandler<'a> {
 
         let download_file_path = download_dir.join(format!(
             "{rand_id}.{id}.bin",
-            rand_id = time_id()
-                .map_err(|e| { format!("Error while getting random id:\n\n{e:?}", e = e) })?,
+            rand_id = time_id(),
             id = f.meta.unique_id
         ));
 

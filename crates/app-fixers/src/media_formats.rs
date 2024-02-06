@@ -234,7 +234,7 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
 }
 
 fn copy_file_to_cache_folder(file_path: &Path) -> Result<(PathBuf, PathBuf), String> {
-    let id = time_thread_id().map_err(|e| format!("Failed to get time thread id: {e:?}"))?;
+    let id = time_thread_id();
 
     let cache_folder = CONFIG.cache_dir().join(format!("transcode-{}", id));
 

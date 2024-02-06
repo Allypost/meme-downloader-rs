@@ -70,7 +70,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
 }
 
 fn get_output_template<S: Into<PathBuf>>(download_dir: S) -> PathBuf {
-    let file_identifier = time_id().expect("Failed to get time id");
+    let file_identifier = time_id();
     let file_name = format!("{file_identifier}.%(id).64s.%(ext)s");
 
     download_dir.into().join(file_name)

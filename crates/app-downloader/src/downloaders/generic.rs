@@ -31,7 +31,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
 
     app_logger::debug!("Got extension: {:?}", extension);
 
-    let id = time_id().map_err(|e| format!("Failed to get time id: {:?}", e))?;
+    let id = time_id();
     let mut file_name = OsString::from(&id);
 
     let taken_filename_len = id.len() + 1 + extension.len();

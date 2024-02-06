@@ -216,7 +216,6 @@ pub struct Configuration {
     pub endpoints: common::EndpointConfig,
 }
 
-#[allow(dead_code)]
 impl Configuration {
     fn get_project_dir() -> Option<ProjectDirs> {
         ProjectDirs::from(ORGANIZATION_QUALIFIER, ORGANIZATION_NAME, APPLICATION_NAME)
@@ -265,106 +264,5 @@ impl Configuration {
 
             endpoints: config.endpoints,
         }
-    }
-
-    fn new() -> Self {
-        let mut config = Self::default();
-        let args = CliArgs::parse();
-        let file_config = FileConfiguration::new(args.app.config_path.as_deref())
-            .expect("Failed to load config file");
-
-        config.merge_file_config(&file_config);
-        config.merge_args(&args);
-
-        {
-            if config.yt_dlp_path.as_os_str().is_empty() {
-                config.yt_dlp_path = which("yt-dlp")
-                    .map_err(|e| anyhow!("yt-dlp not found: {}", e))
-                    .expect("Failed to find yt-dlp");
-            }
-        }
-
-        {
-            if config.ffmpeg_path.as_os_str().is_empty() {
-                config.ffmpeg_path = which("ffmpeg")
-                    .map_err(|e| anyhow!("ffmpeg not found: {}", e))
-                    .expect("Failed to find ffmpeg");
-            }
-        }
-
-        {
-            if config.ffprobe_path.as_os_str().is_empty() {
-                config.ffprobe_path = which("ffprobe")
-                    .map_err(|e| anyhow!("ffprobe not found: {}", e))
-                    .expect("Failed to find ffprobe");
-            }
-        }
-
-        {
-            if let Some(scenedetect_path) = &config.scenedetect_path {
-                if scenedetect_path.as_os_str().is_empty() {
-                    config.scenedetect_path = which("scenedetect").ok();
-                }
-            } else {
-                config.scenedetect_path = which("scenedetect").ok();
-            }
-        }
-
-        {
-            if config.memes_directory.as_os_str().is_empty() {
-                config.memes_directory = directories::UserDirs::new()
-                    .expect("Failed to get user home directory")
-                    .home_dir()
-                    .join("MEMES");
-            }
-            config.memes_directory = config
-                .memes_directory
-                .try_resolve()
-                .expect("Failed to resolve memes directory")
-                .into();
-        }
-
-        #[cfg(feature = "telegram-bot")]
-        {
-            if !args.bots.telegram.run_as_bot {
-                config.telegram = None;
-            } else if config.telegram.is_none() {
-                eprintln!("Telegram bot config not set");
-                std::process::exit(1);
-            }
-        }
-
-        if let Some(dump_type) = args.app.dump_config {
-            match dump_type.unwrap_or(DumpType::Toml) {
-                DumpType::Toml => {
-                    println!(
-                        "{}",
-                        toml::to_string_pretty(&config).expect("Failed to dump config")
-                    );
-                }
-
-                DumpType::Json => {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&config).expect("Failed to dump config")
-                    );
-                }
-            }
-            std::process::exit(0);
-        }
-
-        config
-    }
-
-    fn merge_args(&mut self, args: &CliArgs) -> &Self {
-        args.merge_into_configuration(self);
-
-        self
-    }
-
-    fn merge_file_config(&mut self, file_config: &FileConfiguration) -> &Self {
-        file_config.merge_into_configuration(self);
-
-        self
     }
 }

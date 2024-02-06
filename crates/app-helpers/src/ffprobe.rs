@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{collections::HashMap, error, fmt, io, num, path::Path, process, time};
 
 use app_config::CONFIG;

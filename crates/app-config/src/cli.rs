@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     common::{AppConfig, EndpointConfig, ProgramPathConfig},
-    Config, Configuration,
+    Config,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Parser)]
@@ -25,56 +25,6 @@ pub struct CliArgs {
 }
 
 impl CliArgs {
-    pub(crate) fn merge_into_configuration(&self, config: &mut Configuration) {
-        if let Some(yt_dlp_path) = &self.paths.yt_dlp_path {
-            eprintln!(
-                "Found yt-dlp path from arguments: {:?}",
-                yt_dlp_path.display()
-            );
-            config.yt_dlp_path = yt_dlp_path.into();
-        }
-
-        if let Some(app_config) = &self.app.app_config {
-            if let Some(memes_directory) = &app_config.memes_directory {
-                eprintln!(
-                    "Found memes directory from arguments: {:?}",
-                    memes_directory.display()
-                );
-                config.memes_directory = memes_directory.into();
-            }
-        }
-
-        #[cfg(feature = "telegram-bot")]
-        {
-            if self.bots.telegram.run_as_bot {
-                if let Some(telegram_config) = self.bots.telegram.config.as_ref() {
-                    if let Some(telegram_bot_token) = telegram_config.bot_token.as_deref() {
-                        config.telegram = Some(crate::common::TelegramBotConfig {
-                            bot_token: Some(telegram_bot_token.to_owned()),
-                            owner_id: telegram_config.owner_id,
-                            api_url: telegram_config.api_url.clone(),
-                        });
-                    }
-
-                    if let Some(telegram_api_url) = telegram_config.api_url.as_deref() {
-                        config.telegram = config.telegram.as_mut().map(|x| {
-                            x.api_url = Some(telegram_api_url.to_owned());
-                            x.clone()
-                        });
-                    }
-                }
-            }
-        }
-
-        if let Some(config_path) = &self.app.config_path {
-            config.config_path = config_path.into();
-        }
-
-        config.args_download_url = self.app.download_url.clone();
-        config.args_fix = self.app.fix;
-        config.endpoints.merge(&self.endpoints);
-    }
-
     pub(crate) fn merge_into_config(&self, config: &mut Config) {
         if let Some(yt_dlp_path) = &self.paths.yt_dlp_path {
             eprintln!(

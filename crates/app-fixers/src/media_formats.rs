@@ -86,7 +86,6 @@ struct TranscodeInfo {
     additional_args: Vec<&'static str>,
 }
 
-#[allow(dead_code)]
 impl TranscodeInfo {
     fn new(extension: &'static str, video_codec: &'static str) -> Self {
         Self {
@@ -96,28 +95,8 @@ impl TranscodeInfo {
         }
     }
 
-    const fn with_extension(mut self, extension: &'static str) -> Self {
-        self.extension = extension;
-        self
-    }
-
-    const fn with_video_codec(mut self, video_codec: &'static str) -> Self {
-        self.video_codec = video_codec;
-        self
-    }
-
     const fn with_audio_codec(mut self, audio_codec: &'static str) -> Self {
         self.audio_codec = Some(audio_codec);
-        self
-    }
-
-    const fn without_audio(mut self) -> Self {
-        self.audio_codec = None;
-        self
-    }
-
-    fn with_additional_args(mut self, additional_args: Vec<&'static str>) -> Self {
-        self.additional_args = additional_args;
         self
     }
 
@@ -320,7 +299,6 @@ struct CodecHandler {
     pub handle: fn(&FfProbeResult, &Stream) -> FixerReturn,
 }
 
-#[allow(dead_code)]
 const CODEC_HANDLERS: &[CodecHandler] = &[
     CodecHandler {
         can_handle: |codec| matches!(codec, "h264"),

@@ -87,57 +87,6 @@ impl FileConfiguration {
     }
 
     #[allow(clippy::unused_self)]
-    pub(crate) fn merge_into_configuration(&self, config: &mut Configuration) {
-        if Self::is_default_config_path(&config.config_path) {
-            config.config_path =
-                Self::create_default_config_file().expect("Failed to create config file");
-        }
-
-        if let Some(dependencies) = &self.dependencies {
-            if let Some(yt_dlp_path) = &dependencies.yt_dlp_path {
-                eprintln!("Found yt-dlp path from config file: {yt_dlp_path:?}");
-                config.yt_dlp_path = yt_dlp_path.into();
-            }
-
-            if let Some(ffmpeg_path) = &dependencies.ffmpeg_path {
-                eprintln!("Found ffmpeg path from config file: {ffmpeg_path:?}");
-                config.ffmpeg_path = ffmpeg_path.into();
-            }
-
-            if let Some(ffprobe_path) = &dependencies.ffprobe_path {
-                eprintln!("Found ffprobe path from config file: {ffprobe_path:?}");
-                config.ffprobe_path = ffprobe_path.into();
-            }
-
-            if let Some(scenedetect_path) = &dependencies.scenedetect_path {
-                eprintln!("Found scenedetect path from config file: {scenedetect_path:?}");
-                config.scenedetect_path = Some(scenedetect_path.into());
-            }
-        }
-
-        if let Some(app) = &self.app {
-            if let Some(memes_directory) = &app.memes_directory {
-                eprintln!("Found memes directory from config file: {memes_directory:?}");
-                config.memes_directory = memes_directory.into();
-            }
-        }
-
-        if let Some(endpoints) = &self.endpoints {
-            config.endpoints.merge(endpoints);
-        }
-
-        #[cfg(feature = "telegram-bot")]
-        {
-            if let Some(bots) = &self.bots {
-                if let Some(telegram) = &bots.telegram {
-                    eprintln!("Found telegram config from config file: {telegram:?}");
-                    config.telegram = Some(telegram.clone());
-                }
-            }
-        }
-    }
-
-    #[allow(clippy::unused_self)]
     pub(crate) fn merge_into_config(&self, config: &mut Config) {
         if Self::is_default_config_path(&config.app.config_path) {
             config.app.config_path =

@@ -10,12 +10,12 @@ use crate::downloaders::yt_dlp;
 
 pub static URL_MATCH: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^https?://(www\.)?twitter\.com/(?P<username>[^/]+)/status/(?P<status_id>[0-9]+)")
-        .unwrap()
+        .expect("Invalid regex")
 });
 
 pub static MEDIA_URL_MATCH: Lazy<Regex> = Lazy::new(|| {
     // https://pbs.twimg.com/media/FqPFEWYWYBQ5iG3?format=png&name=small
-    Regex::new(r"^https?://pbs\.twimg\.com/media/").unwrap()
+    Regex::new(r"^https?://pbs\.twimg\.com/media/").expect("Invalid regex")
 });
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {

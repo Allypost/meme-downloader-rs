@@ -41,14 +41,20 @@ fn check_and_fix_file(file_path: &PathBuf) -> Result<PathBuf, String> {
         let info = file_format_info
             .streams
             .iter()
-            .filter(|s| s.codec_type.is_some())
-            .find(|s| matches!(s.codec_type.as_ref().unwrap().as_str(), "video" | "image"))
+            .find(|s| {
+                s.codec_type
+                    .as_deref()
+                    .is_some_and(|codec| matches!(codec, "video" | "image"))
+            })
             .ok_or_else(|| format!("Failed to get image stream of {file_path:?}"));
 
         info?
     };
 
-    let file_stream_codec = file_image_stream.codec_name.as_ref().unwrap().as_str();
+    let file_stream_codec = file_image_stream
+        .codec_name
+        .as_deref()
+        .ok_or_else(|| format!("Failed to get codec name of {path:?}", path = file_path))?;
 
     trace!(
         "File stream codec: {file_stream_codec:?}",
@@ -176,7 +182,12 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
         .arg("-y")
         .arg("-hide_banner")
         .args(["-loglevel", "panic"])
-        .args(["-i", (cache_from_path.to_str().unwrap())])
+        .args([
+            "-i",
+            (cache_from_path
+                .to_str()
+                .ok_or_else(|| "Failed to convert path to string".to_string())?),
+        ])
         .args(["-max_muxing_queue_size", "1024"])
         .args(["-vf", "scale=ceil(iw/2)*2:ceil(ih/2)*2"])
         .args(["-ab", "320k"])
@@ -237,12 +248,9 @@ fn transcode_media_into(from_path: &PathBuf, to_format: &TranscodeInfo) -> Resul
 
             Ok(new_file_path)
         }
-        _ => {
-            trace!("`ffmpeg' command output: {cmd_output:?}");
-            Err(format!(
-                "Failed transforming {from_path:?} into {to_extension}"
-            ))
-        }
+        _ => Err(format!(
+            "Failed transforming {from_path:?} into {to_extension}"
+        )),
     }
 }
 
@@ -303,8 +311,7 @@ fn get_stream_of_type<'a>(
     file_format_info
         .streams
         .iter()
-        .filter(|s| s.codec_type.is_some())
-        .find(|s| s.codec_type.as_ref().unwrap().as_str() == stream_type)
+        .find(|s| s.codec_type.as_deref().is_some_and(|x| x == stream_type))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -380,7 +387,7 @@ const CODEC_HANDLERS: &[CodecHandler] = &[
         can_handle: |codec| matches!(codec, "webp"),
         handle: |file_format_info, _matched_stream| {
             let from_path = PathBuf::from(file_format_info.format.filename.clone());
-            let img = image::open(&from_path).unwrap();
+            let img = image::open(&from_path).map_err(|e| e.to_string())?;
             let color = img.color();
 
             match color {

@@ -7,7 +7,8 @@ use regex::Regex;
 use super::{twitter, DownloaderReturn};
 use crate::downloaders::common::request::Client;
 
-pub static IS_NUMBERS_ONLY: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+$").unwrap());
+pub static IS_NUMBERS_ONLY: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^\d+$").expect("Invalid regex"));
 
 pub fn is_mastodon_toot(toot_url: &str) -> bool {
     trace!("Checking whether {toot_url:?} is a Mastodon toot");

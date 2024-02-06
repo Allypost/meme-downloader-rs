@@ -8,7 +8,7 @@ use crate::downloaders::twitter;
 
 pub static URL_MATCH: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^https?://(www\.)?tumblr\.com/(?P<username>[^/]+)/(?P<post_id>[0-9]+)(/|/[^/]+)?")
-        .unwrap()
+        .expect("Invalid regex")
 });
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {

@@ -1,30 +1,28 @@
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    result::Result,
+    string::ToString,
+};
 
 #[allow(suspicious_double_ref_op)]
 #[allow(dead_code)]
 pub fn check_results<TVal: Debug, TErr: Display>(
     result: Vec<Result<TVal, TErr>>,
 ) -> Result<Vec<TVal>, String> {
-    if result.iter().any(Result::is_err) {
-        let mapped = result
-            .iter()
-            .filter(|x| x.is_err())
-            .map(|x| x.as_ref().unwrap_err());
+    let (success, err): (Vec<_>, Vec<_>) = result.into_iter().partition(|x| x.as_ref().is_ok());
 
-        let mut ret = vec![];
-        for r in mapped {
-            ret.push(r.to_string());
-        }
+    if !err.is_empty() {
+        let ret = err
+            .into_iter()
+            .filter_map(Result::err)
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
 
-        return Err(ret.join(", "));
+        return Err(ret);
     }
 
-    let mut ret = vec![];
-    for r in result.into_iter().flatten() {
-        ret.push(r);
-    }
-
-    Ok(ret)
+    Ok(success.into_iter().flatten().collect())
 }
 
 pub fn option_contains<T: Eq>(option: &Option<T>, contains: &T) -> bool {

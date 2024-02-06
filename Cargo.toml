@@ -19,6 +19,7 @@ uninlined_format_args = "allow"
 missing_panics_doc = "allow"
 missing_errors_doc = "allow"
 no_effect_underscore_binding = "allow"
+unwrap_used = "warn"
 
 [profile.release]
 strip = true

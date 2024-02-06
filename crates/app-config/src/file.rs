@@ -89,7 +89,8 @@ impl FileConfiguration {
     #[allow(clippy::unused_self)]
     pub(crate) fn merge_into_configuration(&self, config: &mut Configuration) {
         if Self::is_default_config_path(&config.config_path) {
-            config.config_path = Self::create_default_config_file().unwrap();
+            config.config_path =
+                Self::create_default_config_file().expect("Failed to create config file");
         }
 
         if let Some(dependencies) = &self.dependencies {
@@ -139,7 +140,8 @@ impl FileConfiguration {
     #[allow(clippy::unused_self)]
     pub(crate) fn merge_into_config(&self, config: &mut Config) {
         if Self::is_default_config_path(&config.app.config_path) {
-            config.app.config_path = Self::create_default_config_file().unwrap();
+            config.app.config_path =
+                Self::create_default_config_file().expect("Failed to create config file");
         }
 
         if let Some(dependencies) = &self.dependencies {
@@ -246,7 +248,7 @@ impl FileConfiguration {
         }
 
         let config = {
-            let config_file = fs::read_to_string(p).unwrap();
+            let config_file = fs::read_to_string(p).expect("Failed to read config file");
             let old_config =
                 toml::from_str::<OldFileConfiguration>(&config_file).unwrap_or_default();
             let new_config = match toml::from_str::<Self>(&config_file) {
@@ -309,6 +311,9 @@ impl FileConfiguration {
     {
         let p = path.as_ref().as_os_str();
 
-        p.is_empty() || p == Self::default_config_path().unwrap().as_os_str()
+        p.is_empty()
+            || p == Self::default_config_path()
+                .expect("MEME_DOWNLOADER_CONFIG_DIR is not set")
+                .as_os_str()
     }
 }

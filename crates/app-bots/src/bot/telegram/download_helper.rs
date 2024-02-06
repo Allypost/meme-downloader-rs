@@ -29,7 +29,9 @@ impl DownloadResult {
         self.files
             .par_iter()
             .map(|file_path| {
-                let name = file_path.file_name().unwrap();
+                let name = file_path.file_name().ok_or_else(|| {
+                    format!("Error while getting file name: {path:?}", path = file_path)
+                })?;
                 let new_file_path = memes_dir.join(name);
 
                 fs::copy(file_path, &new_file_path)

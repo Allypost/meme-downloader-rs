@@ -113,7 +113,7 @@ fn main() {
                 "Downloaded file(s): {}",
                 paths
                     .iter()
-                    .map(|x| { return x.to_str().unwrap() })
+                    .filter_map(|x| x.to_str())
                     .collect::<Vec<&str>>()
                     .join(", ")
             );
@@ -185,7 +185,7 @@ fn run_telegram_bot() {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
-        .unwrap()
+        .expect("Failed to create runtime")
         .block_on(app_bots::bot::telegram::run());
 
     info!("Telegram bot stopped");

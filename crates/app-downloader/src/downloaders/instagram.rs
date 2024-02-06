@@ -8,8 +8,9 @@ use regex::Regex;
 use super::DownloaderReturn;
 use crate::downloaders::{common::request::Client, yt_dlp};
 
-pub static URL_MATCH: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^https?://(www\.)?instagram.com/p/(?P<post_id>[^/?]+)").unwrap());
+pub static URL_MATCH: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^https?://(www\.)?instagram.com/p/(?P<post_id>[^/?]+)").expect("Invalid regex")
+});
 
 pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
     let instagram_urls = fetch_instagram_urls(url)?;
@@ -20,21 +21,19 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         .map(|url| yt_dlp::download(download_dir, url))
         .collect();
 
-    if res.iter().any(Result::is_err) {
-        return Err(res
-            .iter()
-            .filter(|x| x.is_err())
-            .map(|x| return x.as_ref().unwrap_err().clone())
-            .collect::<Vec<String>>()
+    let (success, errs): (Vec<_>, Vec<_>) = res
+        .into_iter()
+        .partition(|x| x.as_ref().map_or(false, |x| !x.is_empty()));
+
+    if !errs.is_empty() {
+        return Err(errs
+            .into_iter()
+            .filter_map(std::result::Result::err)
+            .collect::<Vec<_>>()
             .join(", "));
     }
 
-    let res = res
-        .iter()
-        .flat_map(|x| return x.as_ref().unwrap().clone())
-        .collect::<Vec<PathBuf>>();
-
-    Ok(res)
+    Ok(success.into_iter().flatten().flatten().collect())
 }
 
 fn fetch_instagram_urls(url: &str) -> Result<Vec<String>, String> {
@@ -103,11 +102,12 @@ fn fetch_instagram_urls(url: &str) -> Result<Vec<String>, String> {
 
     let edges = &edges["edge_sidecar_to_children"]["edges"]
         .as_array()
-        .unwrap();
+        .expect("Failed to get edges on response")[..]
+        .to_vec();
 
     let urls = edges
         .iter()
-        .map(|entry| {
+        .filter_map(|entry| {
             let node = entry.get("node").and_then(serde_json::Value::as_object)?;
 
             if node.contains_key("video_url") {
@@ -118,8 +118,7 @@ fn fetch_instagram_urls(url: &str) -> Result<Vec<String>, String> {
             debug!("Found image in post: {}", node["id"]);
             return node.get("display_url").and_then(serde_json::Value::as_str);
         })
-        .filter(std::option::Option::is_some)
-        .map(|x| x.unwrap().to_string())
+        .map(string::ToString::to_string)
         .collect::<Vec<String>>();
 
     debug!("Found multiple Instagram media");

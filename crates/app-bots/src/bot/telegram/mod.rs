@@ -99,11 +99,12 @@ async fn run_listener(bot: Bot) {
 
             let resp = runtime.block_on(msg_handler.handle());
 
-            if resp.is_ok() {
-                return;
-            }
-
-            let e = resp.unwrap_err();
+            let e = match resp {
+                Ok(()) => {
+                    return;
+                }
+                Err(e) => e,
+            };
 
             error!("Error while handling message: {e:?}");
 

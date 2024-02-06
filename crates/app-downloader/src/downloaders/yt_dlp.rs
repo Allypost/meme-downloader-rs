@@ -19,7 +19,12 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
         .arg("--no-part")
         .arg("--no-mtime")
         .arg("--no-embed-metadata")
-        .args(["--output", output_template.to_str().unwrap()])
+        .args([
+            "--output",
+            output_template
+                .to_str()
+                .ok_or_else(|| "Failed to convert path to string".to_string())?,
+        ])
         .args(["--user-agent", USER_AGENT])
         .args(["--no-simulate", "--print", "after_move:filepath"])
         // .arg("--verbose")
@@ -34,7 +39,8 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
             stderr: _,
             status,
         }) if status.success() => {
-            let output = String::from_utf8(stdout).unwrap();
+            let output = String::from_utf8(stdout)
+                .map_err(|e| format!("Failed to convert output to UTF-8: {e:?}"))?;
             let output_path = PathBuf::from(output.trim());
 
             if output_path.exists() {
@@ -64,7 +70,7 @@ pub fn download(download_dir: &PathBuf, url: &str) -> DownloaderReturn {
 }
 
 fn get_output_template<S: Into<PathBuf>>(download_dir: S) -> PathBuf {
-    let file_identifier = time_id().unwrap();
+    let file_identifier = time_id().expect("Failed to get time id");
     let file_name = format!("{file_identifier}.%(id).64s.%(ext)s");
 
     download_dir.into().join(file_name)

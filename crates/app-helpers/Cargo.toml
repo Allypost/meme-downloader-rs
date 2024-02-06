@@ -1,13 +1,15 @@
 [package]
 name = "app-helpers"
-version = "0.3.0"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
 
 [dependencies]
 anyhow = "1.0.71"
 base64 = "0.21.2"
-app-config = { version = "*", path = "../app-config" }
-app-logger = { version = "*", path = "../app-logger" }
+app-config.workspace = true
+app-logger.workspace = true
 serde = "1.0.164"
 serde_json = "1.0.96"
 trash = "3.0.3"

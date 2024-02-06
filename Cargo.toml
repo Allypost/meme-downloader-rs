@@ -9,6 +9,14 @@ authors = ["Allypost"]
 description = "A meme downloader"
 edition = "2021"
 
+[workspace.dependencies]
+app-bots = { version = "*", path = "crates/app-bots" }
+app-config = { version = "*", path = "crates/app-config" }
+app-downloader = { version = "*", path = "crates/app-downloader" }
+app-fixers = { version = "*", path = "crates/app-fixers" }
+app-helpers = { version = "*", path = "crates/app-helpers" }
+app-logger = { version = "*", path = "crates/app-logger" }
+
 [workspace.lints.clippy]
 nursery = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }

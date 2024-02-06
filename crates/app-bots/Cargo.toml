@@ -1,18 +1,20 @@
 [package]
 name = "app-bots"
-version = "0.3.0"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
 
 [dependencies]
 anyhow = "1.0.71"
 async-recursion = "1.0.4"
-app-config = { version = "*", path = "../app-config" }
-app-downloader = { version = "*", path = "../app-downloader" }
-app-fixers = { version = "*", path = "../app-fixers" }
+app-config.workspace = true
+app-downloader.workspace = true
+app-fixers.workspace = true
 futures = "0.3.28"
-app-helpers = { version = "*", path = "../app-helpers" }
-infer = "0.13.0"
-app-logger = { version = "*", path = "../app-logger" }
+app-helpers.workspace = true
+infer = "0.15.0"
+app-logger.workspace = true
 rayon = "1.7.0"
 reqwest = { version = "0.11.18", default-features = false }
 scopeguard = "1.1.0"

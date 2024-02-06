@@ -11,17 +11,17 @@ fn now_ns() -> Result<u128> {
     Ok(ns)
 }
 
-#[allow(clippy::unnecessary_wraps)]
-fn encode<T: AsRef<[u8]>>(data: T) -> Result<String> {
-    let encoded = base64::engine::general_purpose::STANDARD_NO_PAD.encode(data);
-
-    Ok(encoded)
+fn encode<T>(data: T) -> String
+where
+    T: AsRef<[u8]>,
+{
+    base64::engine::general_purpose::STANDARD_NO_PAD.encode(data)
 }
 
 pub fn time_id() -> Result<String> {
     let ns = now_ns()?;
 
-    encode(ns.to_string())
+    Ok(encode(ns.to_string()))
 }
 
 pub fn time_thread_id() -> Result<String> {
@@ -31,5 +31,5 @@ pub fn time_thread_id() -> Result<String> {
 
     let id = format!("{ns}-{process_id}-{thread_id:?}");
 
-    encode(id)
+    Ok(encode(id))
 }

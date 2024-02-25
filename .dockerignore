@@ -20,6 +20,7 @@ test-media/
 .drone.yml
 .env
 mprocs.yaml
+.editorconfig
 
 # artefacts
 target/

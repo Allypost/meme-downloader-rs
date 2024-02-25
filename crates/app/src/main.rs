@@ -11,7 +11,7 @@ fn main() {
     #[cfg(feature = "telegram-bot")]
     {
         if matches!(CONFIG.run.run_as_bot, Some(app_config::RunAsBot::Telegram)) {
-            run_telegram_bot();
+            return run_telegram_bot();
         }
     }
 

@@ -9,8 +9,10 @@ use super::DownloaderReturn;
 use crate::downloaders::yt_dlp;
 
 pub static URL_MATCH: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^https?://(www\.)?twitter\.com/(?P<username>[^/]+)/status/(?P<status_id>[0-9]+)")
-        .expect("Invalid regex")
+    Regex::new(
+        r"^https?://(www\.)?(twitter|x)\.com/(?P<username>[^/]+)/status/(?P<status_id>[0-9]+)",
+    )
+    .expect("Invalid regex")
 });
 
 pub static MEDIA_URL_MATCH: Lazy<Regex> = Lazy::new(|| {
